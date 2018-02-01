@@ -1,18 +1,23 @@
 let length = ref false
+let ret = ref []
 
-let print_length (x: string) =
-Printf.printf "%d\n" (String.length x)
+let makeList (x: string) =
+  ret := x :: !ret
 
-let print_items =
-match !length with
-| false -> print_endline
-| true -> print_length
+let printItems() =
+  List.iter print_endline (List.rev !ret)
+
+let printLengths() =
+  List.iter (Printf.printf "%d\n") (List.map String.length (List.rev !ret))
 
 let main =
 let speclist = [
 ("-length", Arg.Set length, "prints the lengths of each of the arguments");
 ]
 in let usage_msg = "Usage: my-project [flags] [args] \n Available flags:"
-in Arg.parse speclist print_items usage_msg
+in Arg.parse speclist makeList usage_msg;
+   match !length with
+   | false -> printItems()
+   | true  -> printLengths()
 
-let () = main
+let _ = main
