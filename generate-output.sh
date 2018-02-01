@@ -1,12 +1,6 @@
-CAESAR_TESTS="$(ls caesar-test*.in)"
-VIGENERE_TESTS="$(ls vigenere-test*.in)"
-
-for test in ${CAESAR_TESTS}; do
-  echo "===== $test ====="
-  cat $test | java CaesarCipher
-done
-
-for test in ${VIGENERE_TESTS}; do
-  echo "===== $test ====="
-  cat $test | java VigenereCipher
-done
+echo "===== test1 ====="
+./cli -help hello this better work
+echo "===== test2 ====="
+./cli this should print line by line
+echo "===== test3 ====="
+./cli -length now give me lengths of this
