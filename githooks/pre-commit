@@ -1,6 +1,6 @@
 TEST_RESULTS=$(make test)
 
-ERROR=$?
+ERROR= echo $?
 
 if [[ $ERROR != 0 ]]; then
   echo "Error: tests not passing"
