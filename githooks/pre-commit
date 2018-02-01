@@ -1,0 +1,10 @@
+TEST_RESULTS=$(make test)
+
+ERROR=$?
+
+if [[ $ERROR != 0 ]]; then
+  echo "Error: tests not passing"
+  echo "$TEST_RESULTS"
+  echo "$ERROR"
+  exit $ERROR;
+fi
