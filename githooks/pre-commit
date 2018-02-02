@@ -1,10 +1,2 @@
-TEST_RESULTS= .././test.sh
-
-ERROR= $?
-
-if [[ $ERROR != 0 ]]; then
-  echo "Error: tests not passing"
-  echo "$TEST_RESULTS"
-  echo "$ERROR"
-  exit $ERROR;
-fi
+#!/bin/sh
+echo "# Please include a useful commit message!" > $1
