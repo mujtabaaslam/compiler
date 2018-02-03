@@ -15,7 +15,7 @@ CLI uses the core library for OCaml. The ocamlc compiler is used to build this p
 To build the program simply run `make` in the root directory. To remove the compiled files simply run `make clean`.
 
 **Execution Instructions**  
-Run the cli command using `./cli [flag] [args]`.
+Run the cli program using the command `./cli [flag] [args]`. Run the test suite with the command `make test`
 
 **Hooks**  
 Hooks can be installed to keep commits clean and correct. To install hooks run the `./makehook.sh` command in the githooks directory.
