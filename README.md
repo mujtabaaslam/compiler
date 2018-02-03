@@ -3,11 +3,11 @@
 A simple compiler which a software system that translates programs from one form to another.
 
 **CLI**  
-cli takes an amount of arguments and prints them out in order, one in each line. It also supports two command flags:
--length -- prints out the lengths of the arguments instead of the arguments themselves.
--help -- prints out a usage message for cli.
---help -- prints out a usage message for cli
-.
+cli takes an amount of arguments and prints them out in order, one in each line. It also supports two command flags:  
+-length -- prints out the lengths of the arguments instead of the arguments themselves.  
+-help -- prints out a usage message for cli.  
+--help -- prints out a usage message for cli.  
+
 **Setup Instructions**  
 CLI uses the core library for OCaml. The ocamlc compiler is used to build this program.
 
