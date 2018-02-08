@@ -1,15 +1,36 @@
+type op =
+  | TPlus
+  | TMinus
+  | TMultiply
+  | TDivide
+
 type token =
   | TInt of int
   | TLParen
   | TRParen
-  | TPlus
+  | Operation of op
+
+let string_of_operation (t:op) : string =
+  match t with
+  | TPlus     -> "+"
+  | TMinus    -> "-"
+  | TMultiply -> "*"
+  | TDivide   -> "/"
+
+let operation_of_ch (t:char) : op =
+  match t with
+  | '+' -> TPlus
+  | '-' -> TMinus
+  | '*' -> TMultiply
+  | '/' -> TDivide
+  | _   -> failwith "Unexpected Operation"
 
 let string_of_token (t:token) : string =
   match t with
-  | TInt n  -> string_of_int n
-  | TLParen -> "("
-  | TRParen -> ")"
-  | TPlus   -> "+"
+  | TInt n      -> string_of_int n
+  | TLParen     -> "("
+  | TRParen     -> ")"
+  | Operation t  -> string_of_operation t
 
 let string_of_token_list (toks:token list) : string =
   String.concat "," (List.map string_of_token toks)
@@ -55,7 +76,10 @@ let lex (src:char Stream.t) : token list =
       match ch with
       | '(' -> advance src |> ignore; TLParen :: go ()
       | ')' -> advance src |> ignore; TRParen :: go ()
-      | '+' -> advance src |> ignore; TPlus :: go ()
+      | '+' -> advance src |> ignore; Operation TPlus :: go ()
+      | '-' -> advance src |> ignore; Operation TMinus :: go ()
+      | '*' -> advance src |> ignore; Operation TMultiply :: go ()
+      | '/' -> advance src |> ignore; Operation TDivide :: go ()
       | _   ->
         if is_whitespace ch then
           begin advance src |> ignore; go () end
@@ -63,7 +87,7 @@ let lex (src:char Stream.t) : token list =
           let n = lex_num "" in
           TInt n :: go ()
         else
-          failwith (Printf.sprintf "Unexpected character found: %c" ch)
+            failwith (Printf.sprintf "Unexpected character found: %c" ch)
     else
       []
   in
