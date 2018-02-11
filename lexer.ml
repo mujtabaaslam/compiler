@@ -3,12 +3,15 @@ type op =
   | TMinus
   | TMultiply
   | TDivide
+  | TLeq
+  | If
 
 type token =
   | TInt of int
   | TLParen
   | TRParen
   | Operation of op
+  | Boolean of bool
 
 let string_of_operation (t:op) : string =
   match t with
@@ -16,21 +19,16 @@ let string_of_operation (t:op) : string =
   | TMinus    -> "-"
   | TMultiply -> "*"
   | TDivide   -> "/"
-
-let operation_of_ch (t:char) : op =
-  match t with
-  | '+' -> TPlus
-  | '-' -> TMinus
-  | '*' -> TMultiply
-  | '/' -> TDivide
-  | _   -> failwith "Unexpected Operation"
+  | TLeq      -> "<="
+  | If        -> "if"
 
 let string_of_token (t:token) : string =
   match t with
   | TInt n      -> string_of_int n
   | TLParen     -> "("
   | TRParen     -> ")"
-  | Operation t  -> string_of_operation t
+  | Operation t -> string_of_operation t
+  | Boolean t   -> string_of_bool t
 
 let string_of_token_list (toks:token list) : string =
   String.concat "," (List.map string_of_token toks)
@@ -80,6 +78,37 @@ let lex (src:char Stream.t) : token list =
       | '-' -> advance src |> ignore; Operation TMinus :: go ()
       | '*' -> advance src |> ignore; Operation TMultiply :: go ()
       | '/' -> advance src |> ignore; Operation TDivide :: go ()
+      | '<' -> advance src |> ignore; let c = peek src in
+                                      (match c with
+                                      | '=' -> advance src |> ignore; Operation TLeq :: go ()
+                                      | _ -> failwith ("unexpected character"))
+      | 't' -> advance src |> ignore; let c = peek src in
+                                      (match c with
+                                      | 'r' -> advance src |> ignore; let c = peek src in
+                                                                      (match c with
+                                                                      | 'u' -> advance src |> ignore; let c = peek src in
+                                                                                                      (match c with
+                                                                                                      | 'e' -> advance src |> ignore; Boolean true :: go ()
+                                                                                                      | _ -> failwith ("unexpected character"))
+                                                                      | _ -> failwith ("unexpected character"))
+                                      | _ -> failwith ("unexpected character"))
+      | 'f' -> advance src |> ignore; let c = peek src in
+                                      (match c with
+                                      | 'a' -> advance src |> ignore; let c = peek src in
+                                                                      (match c with
+                                                                      | 'l' -> advance src |> ignore; let c = peek src in
+                                                                                                      (match c with
+                                                                                                      | 's' -> advance src |> ignore; let c = peek src in
+                                                                                                                                      (match c with
+                                                                                                                                      | 'e' -> advance src |> ignore; Boolean false :: go ()
+                                                                                                                                      | _ -> failwith ("unexpected character"))
+                                                                                                      | _ -> failwith ("unexpected character"))
+                                                                      | _ -> failwith ("unexpected character"))
+                                      | _ -> failwith ("unexpected character"))
+      | 'i' -> advance src |> ignore; let c = peek src in
+                                      (match c with
+                                       | 'f' -> advance src |> ignore; Operation If :: go ()
+                                       | _   -> failwith ("unexpected character"))
       | _   ->
         if is_whitespace ch then
           begin advance src |> ignore; go () end
