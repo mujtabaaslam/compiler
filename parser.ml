@@ -24,8 +24,8 @@ let rec parse (toks:token list) : (exp * token list) =
         let oper = ref TMinus in
         let toks       = consume TLParen toks in
         let toks       = match peek toks with
-                         | Operation p     ->  oper := p; consume (Operation p) toks
-                         | _                   ->  failwith "Unexpected Operation"
+                         | Operation p ->  oper := p; consume (Operation p) toks
+                         | _           ->  failwith "Unexpected Operation"
                          in
         if oper.contents = If then
           let (e1, toks) = parse toks in
