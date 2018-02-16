@@ -4,6 +4,7 @@ A simple compiler which a software system that translates programs from one form
 
 # Compiler
 A compiler for a small arithmetic language built on S-expressions. It handles numbers, arithmetic operations, boolean values and boolean operations. The syntax for the compiler is as follows:
+
 `e ::= n | (+ e1 e2) | (- e1 e2) | (* e1 e2) | (/ e1 e2)
     | true | false | (<= e1 e2) | (if e1 e2 e3)`
 
