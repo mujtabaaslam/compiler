@@ -1,0 +1,22 @@
+===== test1 =====
+Usage: my-project [flags] [args]
+ Available flags:
+  -length prints the lengths of each of the arguments
+  -help  Display this list of options
+  --help  Display this list of options
+===== test2 =====
+this
+should
+print
+line
+by
+line
+===== test3 =====
+3
+4
+2
+7
+2
+4
+===== test4 =====
+1
