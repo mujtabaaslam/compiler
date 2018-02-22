@@ -20,15 +20,9 @@ let rec interpret (e:exp) : int =
                                 | true  -> interpret e2
                                 | false -> interpret e3)
   | _                        -> failwith ("unexpected expression type")
+  
 and interpretBool (e:exp) : bool =
   match e with
   | ELeq (e1, e2) -> interpret e1 <= interpret e2
   | EBoolean b    -> b
   | _             -> failwith ("unexpected expression type")
-
-(*let rec interpretIf (e:exp) : int =
-  | match e with
-  | Eif (e1, e2, e3) -> match e1 with
-                        | ELeq (e1, e2)
-                        | EBoolean b
-                        | *)
