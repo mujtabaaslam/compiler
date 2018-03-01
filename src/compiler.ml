@@ -17,6 +17,8 @@ let string_of_token (t:token) : string =
   | DIVIDE    -> "/"
   | LEQ       -> "<="
   | IF        -> "if"
+  | THEN      -> "then"
+  | ELSE      -> "else"
   | BOOL b    -> string_of_bool b
   | _         -> failwith ("unexpected token")
 
@@ -25,14 +27,14 @@ let string_of_token_list (toks:token list) : string =
 
 let rec string_of_exp (e:exp)=
   match e with
-  | EInt n                   -> Printf.printf "%s " (string_of_int n)
-  | EAdd (e1, e2)            -> Printf.printf "(+ "; string_of_exp e1; string_of_exp e2; Printf.printf(")")
-  | ESubtract (e1, e2)       -> Printf.printf "(- "; string_of_exp e1; string_of_exp e2; Printf.printf(")")
-  | EMultiplication (e1, e2) -> Printf.printf "(* "; string_of_exp e1; string_of_exp e2; Printf.printf(")")
-  | EDivision (e1, e2)       -> Printf.printf "(/ "; string_of_exp e1; string_of_exp e2; Printf.printf(")")
-  | Eif (e1, e2, e3)         -> Printf.printf "(if "; string_of_exp e1; string_of_exp e2; string_of_exp e3; Printf.printf(")")
-  | ELeq (e1, e2)            -> Printf.printf "(<= "; string_of_exp e1; string_of_exp e2; Printf.printf(")")
-  | EBoolean b               -> Printf.printf "%s " (string_of_bool b)
+  | EInt n                   -> Printf.printf "%s" (string_of_int n)
+  | EAdd (e1, e2)            -> Printf.printf "("; string_of_exp e1; Printf.printf " + "; string_of_exp e2; Printf.printf ")"
+  | ESubtract (e1, e2)       -> Printf.printf "("; string_of_exp e1; Printf.printf " - "; string_of_exp e2; Printf.printf ")"
+  | EMultiplication (e1, e2) -> Printf.printf "("; string_of_exp e1; Printf.printf " * "; string_of_exp e2; Printf.printf ")"
+  | EDivision (e1, e2)       -> Printf.printf "("; string_of_exp e1; Printf.printf " / "; string_of_exp e2; Printf.printf ")"
+  | Eif (e1, e2, e3)         -> Printf.printf "(if "; string_of_exp e1; Printf.printf " then "; string_of_exp e2; Printf.printf " else "; string_of_exp e3; Printf.printf(")")
+  | ELeq (e1, e2)            -> Printf.printf "("; string_of_exp e1; Printf.printf " <= "; string_of_exp e2; Printf.printf ")"
+  | EBoolean b               -> Printf.printf "%s" (string_of_bool b)
 
 let start_up(f:string) =
   file := f

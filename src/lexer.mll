@@ -13,6 +13,8 @@ let symbols : (string * Parser.token) list =
   ; ("/", DIVIDE)
   ; ("<=", LEQ)
   ; ("if", IF)
+  ; ("then", THEN)
+  ; ("else", ELSE)
   ]
 
 let create_symbol lexbuf =
@@ -32,5 +34,14 @@ rule token = parse
   | digit+                    { INT (int_of_string (lexeme lexbuf)) }
   | boolean                   { BOOL (bool_of_string (lexeme lexbuf)) }
   | whitespace+ | newline+    { token lexbuf }
-  | '(' | ')' | '+' | '-' | '*' | '/' | "<=" | "if"           { create_symbol lexbuf }
+  | '(' |
+    ')' |
+    '+' |
+    '-' |
+    '*' |
+    '/' |
+    "<=" |
+    "if" |
+    "then" |
+    "else" { create_symbol lexbuf }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c) }

@@ -1,6 +1,6 @@
 ===== test1 =====
 1
 ===== test2 =====
-[(,if,(,<=,3,4,),(,if,true,1,2,),(,+,2,3,),)]
+[(,if,(,3,<=,4,),then,(,if,true,then,1,else,2,),else,(,2,+,3,),)]
 ===== test3 =====
-(if (<= 3 4 )(if true 1 2 )(+ 2 3 ))
+(if (3 <= 4) then (if true then 1 else 2) else (2 + 3))
