@@ -18,7 +18,7 @@ let rec interpret (e:exp) : int =
   | Eif (e1, e2, e3)         -> (match interpretBool e1 with
                                 | true  -> interpret e2
                                 | false -> interpret e3)
-  | _                        -> failwith ("unexpected expression type here")
+  | _                        -> failwith ("unexpected expression type")
 
 and interpretBool (e:exp) : bool =
   match e with

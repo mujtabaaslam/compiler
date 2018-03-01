@@ -11,8 +11,8 @@ let symbols : (string * Parser.token) list =
   ; ("-", MINUS)
   ; ("*", MULTIPLY)
   ; ("/", DIVIDE)
-  ; ("<=",LEQ)
-  ; ("if",IF)
+  ; ("<=", LEQ)
+  ; ("if", IF)
   ]
 
 let create_symbol lexbuf =
