@@ -1,7 +1,8 @@
 OCBFLAGS :=
 OCB := ocamlbuild $(OCBFLAGS)
+TEST = test/test.sh
 
-.PHONY: all debug clean top
+.PHONY: all debug clean top test
 
 all: compiler.native
 debug: all compiler.cma
@@ -22,6 +23,9 @@ debug: all compiler.cma
 	$(OCB) $@
 
 .FORCE:
+
+test:
+	$(TEST)
 
 clean:
 	$(OCB) -clean

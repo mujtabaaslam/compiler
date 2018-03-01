@@ -1,12 +1,7 @@
 echo "===== test1 ====="
-./cli -help hello this better work
+./compiler.native example.txt 
 echo "===== test2 ====="
-./cli this should print line by line
+./compiler.native -lex example.txt 
 echo "===== test3 ====="
-./cli -length now give me lengths of this
-echo "===== test4 ====="
-./compiler "example.txt"
-echo "===== test5 ====="
-./compiler -lex "example.txt"
-echo "===== test6 ====="
-./compiler -parse "example.txt"
+./compiler.native -parse example.txt 
+
