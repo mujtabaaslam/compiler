@@ -28,13 +28,15 @@ let string_of_token_list (toks:token list) : string =
 let rec string_of_exp (e:exp)=
   match e with
   | EInt n                   -> Printf.printf "%s" (string_of_int n)
-  | EAdd (e1, e2)            -> Printf.printf "("; string_of_exp e1; Printf.printf " + "; string_of_exp e2; Printf.printf ")"
-  | ESubtract (e1, e2)       -> Printf.printf "("; string_of_exp e1; Printf.printf " - "; string_of_exp e2; Printf.printf ")"
-  | EMultiplication (e1, e2) -> Printf.printf "("; string_of_exp e1; Printf.printf " * "; string_of_exp e2; Printf.printf ")"
-  | EDivision (e1, e2)       -> Printf.printf "("; string_of_exp e1; Printf.printf " / "; string_of_exp e2; Printf.printf ")"
-  | Eif (e1, e2, e3)         -> Printf.printf "(if "; string_of_exp e1; Printf.printf " then "; string_of_exp e2; Printf.printf " else "; string_of_exp e3; Printf.printf(")")
-  | ELeq (e1, e2)            -> Printf.printf "("; string_of_exp e1; Printf.printf " <= "; string_of_exp e2; Printf.printf ")"
+  | EAdd (e1, e2)            -> string_of_exp e1; Printf.printf " + "; string_of_exp e2
+  | ESubtract (e1, e2)       -> string_of_exp e1; Printf.printf " - "; string_of_exp e2
+  | EMultiplication (e1, e2) -> string_of_exp e1; Printf.printf " * "; string_of_exp e2
+  | EDivision (e1, e2)       -> string_of_exp e1; Printf.printf " / "; string_of_exp e2
+  | Eif (e1, e2, e3)         -> Printf.printf "if "; string_of_exp e1; Printf.printf " then "; string_of_exp e2; Printf.printf " else "; string_of_exp e3
+  | ELeq (e1, e2)            -> string_of_exp e1; Printf.printf " <= "; string_of_exp e2
   | EBoolean b               -> Printf.printf "%s" (string_of_bool b)
+  | Eexp (e1)                -> Printf.printf "("; string_of_exp e1; Printf.printf ")"
+  | Bexp (e1)                -> Printf.printf "("; string_of_exp e1; Printf.printf ")" 
 
 let start_up(f:string) =
   file := f
