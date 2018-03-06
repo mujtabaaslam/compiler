@@ -22,6 +22,11 @@ let create_symbol lexbuf =
   List.assoc str symbols
 
 let create_int lexbuf = lexeme lexbuf |> int_of_string
+
+let position lexbuf =
+  let p = lexeme_start_p lexbuf in
+  Printf.sprintf " (line %d, col %d)"
+  p.pos_lnum (p.pos_cnum - p.pos_bol + 1)
 }
 
 let newline    = '\n' | ('\r' '\n') | '\r'
@@ -44,4 +49,4 @@ rule token = parse
     "if" |
     "then" |
     "else" { create_symbol lexbuf }
-  | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c) }
+  | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c ^ (position lexbuf)) }

@@ -24,7 +24,7 @@ and interpretBool (e:exp) : bool =
   match e with
   | ELeq (e1, e2) -> interpret e1 <= interpret e2
   | EBoolean b    -> b
-  | _             -> failwith ("unexpected expression type")
+  | _             -> failwith ("Interpreter error: expected a boolean value in guard of conditional")
 
 let execute (e:exp) =
   match e with
