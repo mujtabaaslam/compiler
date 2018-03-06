@@ -5,15 +5,15 @@ A simple compiler which a software system that translates programs from one form
 # Compiler
 A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values and boolean operations. The syntax for the compiler is as follows:
 
-`e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2 | e1 / e2
-    | true | false | e1 <= e2 | if e1 then e2 else e3`
+`e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2 | e1 / e2  
+    | true | false | e1 <= e2 | if e1 then e2 else e3`  
 
 It also supports four command flags:
 
--lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console
--parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree
--help --  Display this list of options
---help -- Display this list of options
+-lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
+-parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
+-help --  Display this list of options  
+--help -- Display this list of options  
 
 
 ## Setup Instructions
