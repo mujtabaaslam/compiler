@@ -9,6 +9,8 @@ let file = ref ".txt"
 let string_of_token (t:token) : string =
   match t with
   | INT n     -> string_of_int n
+  | BOOL b    -> string_of_bool b
+  | VAR x     -> x
   | LPAREN    -> "("
   | RPAREN    -> ")"
   | PLUS      -> "+"
@@ -19,24 +21,16 @@ let string_of_token (t:token) : string =
   | IF        -> "if"
   | THEN      -> "then"
   | ELSE      -> "else"
-  | BOOL b    -> string_of_bool b
+  | LET       -> "let"
+  | EQ        -> "="
+  | IN        -> "in"
+  | FIX       -> "fix"
+  | FUNC      -> "fun"
+  | ARROW     -> "->"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
   String.concat "," (List.map string_of_token toks)
-
-let rec string_of_exp (e:exp)=
-  match e with
-  | EInt n                   -> Printf.printf "%s" (string_of_int n)
-  | EAdd (e1, e2)            -> string_of_exp e1; Printf.printf " + "; string_of_exp e2
-  | ESubtract (e1, e2)       -> string_of_exp e1; Printf.printf " - "; string_of_exp e2
-  | EMultiplication (e1, e2) -> string_of_exp e1; Printf.printf " * "; string_of_exp e2
-  | EDivision (e1, e2)       -> string_of_exp e1; Printf.printf " / "; string_of_exp e2
-  | Eif (e1, e2, e3)         -> Printf.printf "if "; string_of_exp e1; Printf.printf " then "; string_of_exp e2; Printf.printf " else "; string_of_exp e3
-  | ELeq (e1, e2)            -> string_of_exp e1; Printf.printf " <= "; string_of_exp e2
-  | EBoolean b               -> Printf.printf "%s" (string_of_bool b)
-  | Eexp (e1)                -> Printf.printf "("; string_of_exp e1; Printf.printf ")"
-  | Bexp (e1)                -> Printf.printf "("; string_of_exp e1; Printf.printf ")" 
 
 let start_up(f:string) =
   file := f
@@ -51,15 +45,10 @@ let compile (file:string) =
         | _ -> lexing (t :: tokens)
         in lexing []
   else let ast = Parser.prog Lexer.token lexbuf in
-  let parse_mode a =
     if !parse then
-         begin
-         string_of_exp a;
-         Printf.printf "\n"
-         end
+      string_of_exp ast |> print_endline
     else
-        Lang.execute a
-  in parse_mode ast
+      interpret ast |> string_of_exp |> print_endline
 
 let main () =
   let speclist = [

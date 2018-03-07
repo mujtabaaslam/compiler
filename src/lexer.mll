@@ -15,6 +15,11 @@ let symbols : (string * Parser.token) list =
   ; ("if", IF)
   ; ("then", THEN)
   ; ("else", ELSE)
+  ; ("let", LET)
+  ; ("in", IN)
+  ; ("fix", FIX)
+  ; ("fun", FUNC)
+  ; ("->", ARROW)
   ]
 
 let create_symbol lexbuf =
@@ -33,20 +38,29 @@ let newline    = '\n' | ('\r' '\n') | '\r'
 let whitespace = ['\t' ' ']
 let digit      = ['0'-'9']
 let boolean    = "true" | "false"
+let alpha      = ['a'-'z' 'A'-'Z']
+let var        = alpha ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 rule token = parse
   | eof                       { EOF }
   | digit+                    { INT (int_of_string (lexeme lexbuf)) }
   | boolean                   { BOOL (bool_of_string (lexeme lexbuf)) }
   | whitespace+ | newline+    { token lexbuf }
-  | '(' |
-    ')' |
-    '+' |
-    '-' |
-    '*' |
-    '/' |
-    "<=" |
-    "if" |
+  | var                       { VAR (lexeme lexbuf)}
+  | '('    |
+    ')'    |
+    '+'    |
+    '-'    |
+    '*'    |
+    '/'    |
+    "<="   |
+    "if"   |
     "then" |
-    "else" { create_symbol lexbuf }
+    "else" |
+    "let"  |
+    "in"   |
+    "fix"  |
+    "fun"  |
+    "->"   { create_symbol lexbuf }
+  | '='    { EQ }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c ^ (position lexbuf)) }

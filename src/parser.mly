@@ -4,6 +4,7 @@ open Lang
 
 %token <int> INT
 %token <bool> BOOL
+%token <string> VAR
 
 %token LPAREN     (* ( *)
 %token RPAREN     (* ) *)
@@ -15,8 +16,12 @@ open Lang
 %token IF         (* if *)
 %token THEN       (* then *)
 %token ELSE       (* else *)
-
-
+%token LET        (* let *)
+%token EQ         (* = *)
+%token IN         (* in *)
+%token FIX        (* fix *)
+%token FUNC       (* fun *)
+%token ARROW      (* -> *)
 
 %token EOF
 
@@ -30,13 +35,15 @@ prog:
 exp:
   | b=BOOL                              { EBoolean b }
   | n=INT                               { EInt n }
-  | e1=exp PLUS e2=exp                  { EAdd (e1, e2) }
-  | e1=exp MINUS e2=exp                 { ESubtract (e1, e2) }
-  | e1=exp MULTIPLY e2=exp              { EMultiplication (e1, e2) }
-  | e1=exp DIVIDE e2=exp                { EDivision (e1, e2) }
-  | e1=exp LEQ e2=exp                   { ELeq (e1, e2) }
-  | IF e1=exp THEN e2=exp ELSE e3=exp   { Eif (e1, e2, e3) }
-  | LPAREN e1=exp RPAREN                { (match e1 with
-                                          | ELeq (_, _)   -> Bexp (e1)
-                                          | EBoolean b    -> Bexp (e1)
-                                          | _             -> Eexp (e1))}
+  | x=VAR                               { EVar x }
+  | LPAREN e1=exp RPAREN                { e1 }
+  | e1=exp PLUS e2=exp                  { EOp (EAdd, e1, e2) }
+  | e1=exp MINUS e2=exp                 { EOp (ESubtract, e1, e2) }
+  | e1=exp MULTIPLY e2=exp              { EOp (EMultiplication, e1, e2) }
+  | e1=exp DIVIDE e2=exp                { EOp (EDivision, e1, e2) }
+  | e1=exp LEQ e2=exp                   { EOp (ELeq, e1, e2) }
+  | IF e1=exp THEN e2=exp ELSE e3=exp   { EIf (e1, e2, e3) }
+  | LET x=VAR EQ e1=exp IN e2=exp       { ELet (x, e1, e2) }
+  | FUNC x=VAR ARROW e1=exp             { EFunc (x, e1) }
+  | FIX f=VAR x=VAR ARROW e1=exp        { EFix (f, x, e1) }
+  | e1=exp LPAREN e2=exp RPAREN         { EApp (e1, e2) }
