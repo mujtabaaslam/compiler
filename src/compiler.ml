@@ -9,8 +9,6 @@ let file = ref ".txt"
 let string_of_token (t:token) : string =
   match t with
   | INT n     -> string_of_int n
-  | BOOL b    -> string_of_bool b
-  | VAR x     -> x
   | LPAREN    -> "("
   | RPAREN    -> ")"
   | PLUS      -> "+"
@@ -21,12 +19,7 @@ let string_of_token (t:token) : string =
   | IF        -> "if"
   | THEN      -> "then"
   | ELSE      -> "else"
-  | LET       -> "let"
-  | EQ        -> "="
-  | IN        -> "in"
-  | FIX       -> "fix"
-  | FUNC      -> "fun"
-  | ARROW     -> "->"
+  | BOOL b    -> string_of_bool b
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
@@ -35,20 +28,20 @@ let string_of_token_list (toks:token list) : string =
 let start_up(f:string) =
   file := f
 
-let compile (file:string) =
-  let lexbuf = (Lexing.from_channel (open_in file)) in
-  if !lex then
-    let rec lexing tokens =
-      let t = Lexer.token lexbuf in
-        match t with
-        | Parser.EOF -> Printf.printf "["; Printf.printf "%s" (string_of_token_list (List.rev tokens)); Printf.printf "]\n"
-        | _ -> lexing (t :: tokens)
-        in lexing []
-  else let ast = Parser.prog Lexer.token lexbuf in
-    if !parse then
-      string_of_exp ast |> print_endline
-    else
-      interpret ast |> string_of_exp |> print_endline
+  let compile (file:string) =
+    let lexbuf = (Lexing.from_channel (open_in file)) in
+    if !lex then
+      let rec lexing tokens =
+        let t = Lexer.token lexbuf in
+          match t with
+          | Parser.EOF -> Printf.printf "["; Printf.printf "%s" (string_of_token_list (List.rev tokens)); Printf.printf "]\n"
+          | _ -> lexing (t :: tokens)
+          in lexing []
+    else let ast = Parser.prog Lexer.token lexbuf in
+      if !parse then
+        string_of_exp ast |> print_endline
+      else
+        interpret ast |> string_of_exp |> print_endline
 
 let main () =
   let speclist = [
