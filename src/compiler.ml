@@ -9,6 +9,7 @@ let file = ref ".txt"
 let string_of_token (t:token) : string =
   match t with
   | INT n     -> string_of_int n
+  | VAR x     -> x
   | LPAREN    -> "("
   | RPAREN    -> ")"
   | PLUS      -> "+"
@@ -16,10 +17,20 @@ let string_of_token (t:token) : string =
   | MULTIPLY  -> "*"
   | DIVIDE    -> "/"
   | LEQ       -> "<="
+  | LESS      -> "<"
+  | GEQ       -> ">="
+  | GREAT     -> ">"
+  | EQUAL     -> "=="
   | IF        -> "if"
   | THEN      -> "then"
   | ELSE      -> "else"
   | BOOL b    -> string_of_bool b
+  | LET       -> "let"
+  | EQ        -> "="
+  | IN        -> "in"
+  | FIX       -> "fix"
+  | FUNC      -> "fun"
+  | ARROW     -> "->"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =

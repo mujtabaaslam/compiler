@@ -3,9 +3,9 @@
 ===== test2 =====
 [(,if,(,3,<=,4,),then,(,if,true,then,1,else,2,),else,(,2,+,3,),)]
 ===== test3 =====
-(if (3 <= 4) then (if true then 1 else 2) else (2 + 3))
+if 3 <= 4 then if true then 1 else 2 else 2 + 3
 ===== test4 =====
-0
+-6
 ===== test5 =====
 [3,/,2,+,5,-,6,*,2]
 ===== test6 =====
@@ -15,4 +15,4 @@
 ===== test8 =====
 [if,(,true,),then,2,else,3]
 ===== test9 =====
-if (true) then 2 else 3
+if true then 2 else 3

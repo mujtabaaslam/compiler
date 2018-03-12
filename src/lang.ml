@@ -1,12 +1,17 @@
 open Printf
 
-type op = EAdd | ESubtract | EMultiplication | EDivision | ELeq
+type op = EAdd | ESubtract | EMultiplication | EDivision | ELeq | ELess | EGeq | EGreat | EEqual
 
 type exp =
 | EInt of int
 | EBoolean of bool
+| EVar of string
 | EOp of op * exp * exp
 | EIf of exp * exp * exp
+| ELet   of string * exp * exp
+| EFunc  of string * exp
+| EFix   of string * string * exp
+| EApp  of exp * exp
 
 let error err_msg =
   fprintf stderr "Error: %s\n" err_msg; exit 1
@@ -17,6 +22,11 @@ let rec string_of_exp (e:exp) : string =
   | EIf (e1, e2, e3)         -> sprintf "if %s then %s else %s" (string_of_exp e1) (string_of_exp e2) (string_of_exp e3)
   | EBoolean b               -> string_of_bool b
   | EInt n                   -> string_of_int n
+  | EVar x                   -> x
+  | ELet (x, v, e1)          -> sprintf "let %s = %s in %s" x (string_of_exp v) (string_of_exp e1)
+  | EFunc (x, e1)            -> sprintf "fun %s -> %s" x (string_of_exp e1)
+  | EFix (f, x, e1)          -> sprintf "fix %s %s -> %s" f x (string_of_exp e1)
+  | EApp (e1, e2)            -> sprintf "%s (%s)" (string_of_exp e1) (string_of_exp e2)
 
 and string_of_op (o:op) (e1:exp) (e2:exp) : string =
 match o with
@@ -25,19 +35,53 @@ match o with
 | EMultiplication  -> sprintf "%s * %s" (string_of_exp e1) (string_of_exp e2)
 | EDivision        -> sprintf "%s / %s" (string_of_exp e1) (string_of_exp e2)
 | ELeq             -> sprintf "%s <= %s" (string_of_exp e1) (string_of_exp e2)
+| ELess            -> sprintf "%s < %s" (string_of_exp e1) (string_of_exp e2)
+| EGeq             -> sprintf "%s >= %s" (string_of_exp e1) (string_of_exp e2)
+| EGreat           -> sprintf "%s > %s" (string_of_exp e1) (string_of_exp e2)
+| EEqual           -> sprintf "%s == %s" (string_of_exp e1) (string_of_exp e2)
+
+let rec subst (v:exp) (x:string) (e:exp) : exp =
+  let sub expr = subst v x expr in
+  match e with
+  | EOp (o, e1, e2)                         -> EOp (o, sub e1, sub e2)
+  | EIf (e1, e2, e3)                        -> EIf (sub e1, sub e2, sub e3)
+  | EApp (e1, e2)                           -> EApp (sub e1, sub e2)
+  | ELet (x', e1, e2) when x <> x'          -> ELet (x', sub e1, sub e2)
+  | EFunc (x', e') when x <> x'             -> EFunc (x', sub e')
+  | EFix (f, x', e') when x <> x' && x <> f -> EFunc (x', sub e')
+  | EVar x' when x = x'                     -> v
+  | _ as e                                  -> e
 
 
 let rec interpret (e:exp) : exp =
   match e with
   | EOp (o, e1, e2)  -> interpretOp o e1 e2
   | EIf (e1, e2, e3) -> interpretIf e1 e2 e3
+  | ELet (x, e1, e2) -> interpretLet x e1 e2
+  | EApp (e1, e2)    -> interpretApp e1 e2
+  | EVar x           -> error (sprintf "No value found for variable '%s'" x)
   | _ as e           -> e
 
   and interpretIf (e1:exp) (e2:exp) (e3:exp) : exp =
     match e1 with
     | EBoolean b             -> if b then interpret e2 else interpret e3
     | EOp(ELeq, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(ELess, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(EGeq, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(EGreat, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(EEqual, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
     | _ -> error (sprintf "Expected a boolean expr for the 1st sub-expr of 'if'-expr, got %s" (string_of_exp e1))
+
+  and interpretLet (x:string) (e1:exp) (e2:exp) =
+    let v1 = interpret e1 in interpret (subst v1 x e2)
+
+  and interpretApp (e1:exp) (e2:exp) : exp =
+    let f = interpret e1 in
+    let v2 = interpret e2 in
+    match f with
+    | EFunc (x, e3)    -> interpret (subst v2 x e3)
+    | EFix (f', x, e3) -> interpret (subst f f' (subst v2 x e3))
+    | _ -> error (sprintf "Expected a function, got %s" (string_of_exp e1))
 
   and interpretOp (o:op) (e1:exp) (e2:exp) : exp =
     let v1 = interpret e1 in
@@ -54,3 +98,7 @@ let rec interpret (e:exp) : exp =
     | EMultiplication -> EInt (v1 * v2)
     | EDivision       -> EInt (v1 / v2)
     | ELeq            -> EBoolean (v1 <= v2)
+    | ELess           -> EBoolean (v1 < v2)
+    | EGeq            -> EBoolean (v1 >= v2)
+    | EGreat          -> EBoolean (v1 > v2)
+    | EEqual          -> EBoolean (v1 = v2)
