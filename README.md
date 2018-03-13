@@ -14,7 +14,7 @@ It also supports four command flags:
 
 -lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
 -parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
--step -- processes the input and prints out every step of evaluation
+-step -- processes the input and prints out every step of evaluation  
 -help --  Display this list of options  
 --help -- Display this list of options  
 
@@ -26,7 +26,7 @@ The compiler uses the core library for OCaml. The ocamlbuild compiler is used to
 To build the program simply run `make` in the root directory. To remove the compiled files simply run `make clean`.
 
 ## Execution Instructions
-Run the compiler program using the command `./compiler.native [flag] [file]` where the file argument are paths to a file that contain an infix style expression. Run the test suite with the command `make test`
+Run the compiler program using the command `./compiler.native [flag] [file]` where the file argument are paths to a file that contain an infix style expression. Run the test suite with the command `make test`.
 
 # CLI  
 cli takes an amount of arguments and prints them out in order, one in each line. It also supports three command flags:  
@@ -49,7 +49,7 @@ Hooks can be installed to keep commits clean and correct. To install hooks run t
 ## Change Log  
 *Assignment 1*  
 **Added**  
-* cli source code  
+* Cli source code  
 * Tests for cli   
 * Makefile  
 
@@ -86,11 +86,11 @@ None
 
 *Assignment 4*  
 **Added**  
-* source code to support let-binds  
-* source code to support functions  
-* source code to support variables
-* source code to support recursion  
-* source code for small step semantics  
+* Source code to support let-binds  
+* Source code to support functions  
+* Source code to support variables
+* Source code to support recursion  
+* Source code for small step semantics  
 
 **Changed**  
 * Tests for compiler  
