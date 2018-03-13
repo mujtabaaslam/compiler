@@ -64,10 +64,10 @@ let rec interpret (e:exp) : exp =
 
   and interpretIf (e1:exp) (e2:exp) (e3:exp) : exp =
     match e1 with
-    | EBoolean b             -> if b then interpret e2 else interpret e3
-    | EOp(ELeq, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
-    | EOp(ELess, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
-    | EOp(EGeq, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+    | EBoolean b               -> if b then interpret e2 else interpret e3
+    | EOp(ELeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(ELess, _, _) as e1   -> interpret (EIf ((interpret e1), e2, e3))
+    | EOp(EGeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
     | EOp(EGreat, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
     | EOp(EEqual, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
     | _ -> error (sprintf "Expected a boolean expr for the 1st sub-expr of 'if'-expr, got %s" (string_of_exp e1))
@@ -102,3 +102,46 @@ let rec interpret (e:exp) : exp =
     | EGeq            -> EBoolean (v1 >= v2)
     | EGreat          -> EBoolean (v1 > v2)
     | EEqual          -> EBoolean (v1 = v2)
+
+let is_value (e:exp) : bool =
+  match e with
+   | EInt _ | EBoolean _
+   | EFunc (_, _) | EFix (_, _, _) -> true
+   | _                             -> false
+
+let rec step (e:exp) : exp =
+  match e with
+  | EOp (o, e1, e2)  -> stepOp o e1 e2
+  | EIf (e1, e2, e3) -> stepIf e1 e2 e3
+  | ELet (x, e1, e2) -> stepLet x e1 e2
+  | EApp (e1, e2)    -> stepApp e1 e2
+  | EVar x           -> error (sprintf "Empty variable '%s'" x)
+  | _ as e           -> e
+   and stepOp (o:op) (e1:exp) (e2:exp) : exp =
+     if is_value e1 && is_value e2 then interpretOp o e1 e2
+     else if is_value e1 then EOp (o, e1, step e2)
+     else EOp (o, step e1, e2)
+   and stepIf (e1:exp) (e2:exp) (e3:exp) : exp =
+     if is_value e1 then
+       match e1 with
+       | EBoolean b -> if b then step e2 else step e3
+       | _          -> error (sprintf "Expected a boolean expr for the 1st sub-expr of 'if'-expr, got %s" (string_of_exp e1))
+     else EIf (step e1, e2, e3)
+   and stepLet (x:string) (e1:exp) (e2:exp) : exp =
+     if is_value e1 then subst e1 x e2 else ELet (x, step e1, e2)
+   and stepApp (e1:exp) (e2:exp) : exp =
+     if is_value e1 && is_value e2 then
+       match e1 with
+       | EFunc (x, e3)   -> subst e2 x e3
+       | EFix (f, x, e3) -> subst e1 f (subst e2 x e3)
+       | _ -> error (sprintf "Expected a function, got %s" (string_of_exp e1))
+     else if is_value e1 then EApp (e1, step e2)
+     else EApp (step e1, e2)
+
+let rec step_interpret (e:exp) =
+  if is_value e then
+    sprintf "-> %s" (string_of_exp e) |> print_endline
+  else begin
+    sprintf "-> %s" (string_of_exp e) |> print_endline;
+    step e |> step_interpret
+    end

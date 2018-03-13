@@ -1,1 +1,6 @@
-(if (3 <= 4) then (if true then 1 else 2) else (2 + 3))
+let max2 =
+      fun x -> fun y -> if x > y then x else y
+    in
+    let a = 5 in
+    let b = 2 in
+    max2 (a) (b)

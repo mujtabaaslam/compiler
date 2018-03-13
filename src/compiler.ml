@@ -5,6 +5,7 @@ open Parser
 let lex = ref false
 let parse = ref false
 let file = ref ".txt"
+let step = ref false
 
 let string_of_token (t:token) : string =
   match t with
@@ -51,6 +52,8 @@ let start_up(f:string) =
     else let ast = Parser.prog Lexer.token lexbuf in
       if !parse then
         string_of_exp ast |> print_endline
+      else if !step then
+        step_interpret ast
       else
         interpret ast |> string_of_exp |> print_endline
 
@@ -58,6 +61,7 @@ let main () =
   let speclist = [
   ("-lex", Arg.Set lex, "processes the input source file through the lexing phase and prints the resulting stream of tokens to the console");
   ("-parse", Arg.Set parse, "processes the input source file through the parsing phase and prints the resulting abstract syntax tree");
+  ("-step", Arg.Set step, "processes the input and prints out every step of evaluation")
   ] in
   let usage_msg = "Usage: my-project [flags] [args]\n Available flags:" in
   Arg.parse speclist start_up usage_msg;
