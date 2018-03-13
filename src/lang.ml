@@ -70,7 +70,7 @@ let rec interpret (e:exp) : exp =
     | EOp(EGeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
     | EOp(EGreat, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
     | EOp(EEqual, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
-    | _ -> error (sprintf "Expected a boolean expr for the 1st sub-expr of 'if'-expr, got %s" (string_of_exp e1))
+    | _ -> error (sprintf "Expected a boolean expression got %s" (string_of_exp e1))
 
   and interpretLet (x:string) (e1:exp) (e2:exp) =
     let v1 = interpret e1 in interpret (subst v1 x e2)
@@ -88,7 +88,7 @@ let rec interpret (e:exp) : exp =
     let v2 = interpret e2 in
     match (v1, v2) with
     | (EInt n1, EInt n2) -> interpretInt o n1 n2
-    | _ -> error (sprintf "Expected 2 numeric sub-exprs for a binary expr, got %s and %s"
+    | _ -> error (sprintf "Expected 2 numeric expressions, got %s and %s"
                   (string_of_exp e1) (string_of_exp e2))
 
  and interpretInt (o:op) (v1:int) (v2:int) : exp =
@@ -125,7 +125,7 @@ let rec step (e:exp) : exp =
      if is_value e1 then
        match e1 with
        | EBoolean b -> if b then step e2 else step e3
-       | _          -> error (sprintf "Expected a boolean expr for the 1st sub-expr of 'if'-expr, got %s" (string_of_exp e1))
+       | _          -> error (sprintf "Expected a boolean expression got %s" (string_of_exp e1))
      else EIf (step e1, e2, e3)
    and stepLet (x:string) (e1:exp) (e2:exp) : exp =
      if is_value e1 then subst e1 x e2 else ELet (x, step e1, e2)

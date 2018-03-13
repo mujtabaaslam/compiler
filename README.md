@@ -3,15 +3,16 @@
 A simple compiler which a software system that translates programs from one form to another.
 
 # Compiler
-A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values and boolean operations. The syntax for the compiler is as follows:
+A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values, boolean operations, let-binds, functions, recursion and variables. The syntax for the compiler is as follows:
 
-`e ::= n | (e) | e1 + e1 | e1 - e2 | e1 * e2 | e1 / e2  
-    | true | false | e1 <= e2 | if e1 then e2 else e3`  
+`e ::= n | b | x | (e1 (+) e2) | if e1 then e2 else e3
+    | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)`  
 
 It also supports four command flags:
 
 -lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
 -parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
+-step -- processes the input and prints out every step of evaluation
 -help --  Display this list of options  
 --help -- Display this list of options  
 
@@ -80,3 +81,17 @@ None
 
 **Known Bugs**  
 None  
+
+*Assignment 4*  
+**Added**  
+* source code to support let-binds
+* source code to support functions
+* source code to support variables
+* source code to support recursion
+* source code for small step semantics
+
+**Changed**  
+* Tests for compiler
+
+**Known Bugs**  
+None
