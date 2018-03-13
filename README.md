@@ -10,7 +10,7 @@ e ::= n | b | x | e1 (+) e2 | if e1 then e2 else e3
     | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)
 ```
 
-It also supports four command flags:
+It also supports five command flags:
 
 -lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
 -parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
