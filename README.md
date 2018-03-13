@@ -7,7 +7,7 @@ A compiler for a small arithmetic language built on infix style. It handles numb
 
 ```
 e ::= n | b | x | e1 (+) e2 | if e1 then e2 else e3       
-      | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)
+    | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)
 ```
 
 It also supports four command flags:
