@@ -327,8 +327,6 @@ let rec step (e:exp) : exp =
   | EOp (o, e1, e2)         -> stepOp o e1 e2
   | EIf (e1, e2, e3)        -> stepIf e1 e2 e3
   | ELet (x, t, e1, e2)     -> stepLet x t e1 e2
-  | EFunc (x, t1, t2, e1)   -> stepFunc x t1 t2 e1
-  | EFix (f, x, t1, t2, e1) -> stepFix f x t1 t2 e1
   | EApp (e1, e2)           -> stepApp e1 e2
   | EPair (e1, e2)          -> stepPair e1 e2
   | EFst e1                 -> stepFst e1
@@ -350,10 +348,6 @@ and stepIf (e1:exp) (e2:exp) (e3:exp) : exp =
    else EIf (step e1, e2, e3)
 and stepLet (x:string) (t:typ) (e1:exp) (e2:exp) : exp =
   if is_value e1 then subst e1 x e2 else ELet (x, t, step e1, e2)
-and stepFunc (x:string) (t1:typ) (t2:typ) (e:exp) : exp =
-  let e1 = if is_value e then e else step e in EFunc (x, t1, t2, e1)
-and stepFix (f:string) (x:string) (t1:typ) (t2:typ) (e:exp) : exp =
-  let e1 = if is_value e then e else step e in EFix (f, x, t1, t2, e1)
 and stepApp (e1:exp) (e2:exp) : exp =
   if is_value e1 && is_value e2 then
     match e1 with

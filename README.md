@@ -6,8 +6,18 @@ A simple compiler which a software system that translates programs from one form
 A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values, boolean operations, let-binds, functions, recursion and variables. The syntax for the compiler is as follows:
 
 ```
-e ::= n | b | x | e1 (+) e2 | if e1 then e2 else e3       
-    | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)
+e ::= (e) | n | b | e1 (+) e2 | if e1 then e2 else e3
+    | x | let x : t = e1 in e2
+    | e1 (e2) | fun (x:t1) : t2 -> e | fix f (x:t1) : t2 -> e
+    | ()
+    | (e1, e2) | fst e | snd e
+    | [] : t | e1 :: e2 | hd e | tl e | empty e
+
+(+) ::= + | - | * | /
+       | == | <= | >= | < | >
+
+t ::= int | bool | t1 -> t2 | unit | t1 * t2 | [t]
+
 ```
 
 It also supports five command flags:
@@ -91,6 +101,19 @@ None
 * Source code to support variables
 * Source code to support recursion  
 * Source code for small step semantics  
+
+**Changed**  
+* Tests for compiler  
+
+**Known Bugs**  
+None  
+
+*Assignment 4*  
+**Added**  
+* Source code for types and type-checking   
+* Source code to support unit  
+* Source code to support pairs  
+* Source code to support lists  
 
 **Changed**  
 * Tests for compiler  
