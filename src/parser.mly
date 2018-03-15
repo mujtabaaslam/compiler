@@ -12,6 +12,7 @@
 %token COLON TINT TBOOL
 %token LET EQ IN
 %token FIX FUNC ARROW
+%token COMMA FST SND
 %token EOF
 
 %nonassoc ELSE IN ARROW
@@ -28,9 +29,11 @@ prog:
   | e=exp EOF                           { e }
 
 exp:
+  | LPAREN RPAREN                                                         { EUnit}
   | b=BOOL                                                                { EBoolean b }
   | n=INT                                                                 { EInt n }
   | x=VAR                                                                 { EVar x }
+  | LPAREN e1=exp RPAREN                                                  { e1 }
   | e1=exp PLUS e2=exp                                                    { EOp (EAdd, e1, e2) }
   | e1=exp MINUS e2=exp                                                   { EOp (ESubtract, e1, e2) }
   | e1=exp MULTIPLY e2=exp                                                { EOp (EMultiplication, e1, e2) }
@@ -45,13 +48,16 @@ exp:
   | FUNC LPAREN x=VAR COLON t1=typ RPAREN COLON t2=typ ARROW e1=exp       { EFunc (x, t1, t2, e1) }
   | FIX f=VAR LPAREN x=VAR COLON t1=typ RPAREN COLON t2=typ ARROW e1=exp  { EFix (f, x, t1, t2, e1) }
   | e1=exp LPAREN e2=exp RPAREN                                           { EApp (e1, e2) }
-  | LPAREN e1=exp RPAREN                                                  { e1 }
+  | LPAREN e1=exp COMMA e2=exp RPAREN                                     { EPair (e1, e2) }
+  | FST e1=exp                                                            { EFst e1 }
+  | SND e1=exp                                                            { ESnd e1 }
 
   typ_asn:
     | COLON t = typ             { t }
 
   typ:
-    | TINT                     { TInt }
-    | TBOOL                    { TBoolean }
-    | LPAREN t = typ RPAREN    { t }
-    | t1 = typ ARROW t2 = typ  { TFunc (t1, t2) }
+    | TINT                          { TInt }
+    | TBOOL                         { TBoolean }
+    | LPAREN t = typ RPAREN         { t }
+    | t1 = typ ARROW t2 = typ       { TFunc (t1, t2) }
+    | t1 = typ MULTIPLY t2 = typ    { TPair (t1, t2) }

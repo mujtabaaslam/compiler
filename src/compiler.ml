@@ -35,6 +35,9 @@ let string_of_token (t:token) : string =
   | TINT      -> "int"
   | TBOOL     -> "bool"
   | COLON     -> ":"
+  | COMMA     -> ","
+  | FST       -> "fst"
+  | SND       -> "snd"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
