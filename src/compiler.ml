@@ -38,6 +38,13 @@ let string_of_token (t:token) : string =
   | COMMA     -> ","
   | FST       -> "fst"
   | SND       -> "snd"
+  | LBRK      -> "["
+  | RBRK      -> "]"
+  | DCOLON    -> "::"
+  | HD        -> "hd"
+  | TL        -> "tl"
+  | EMPTY     -> "empty"
+  | TLIST     -> "list"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =

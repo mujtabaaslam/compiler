@@ -13,6 +13,7 @@
 %token LET EQ IN
 %token FIX FUNC ARROW
 %token COMMA FST SND
+%token LBRK RBRK DCOLON HD TL EMPTY TLIST
 %token EOF
 
 %nonassoc ELSE IN ARROW
@@ -20,6 +21,8 @@
 %left PLUS MINUS
 %left MULTIPLY DIVIDE
 %nonassoc LPAREN
+%nonassoc FST SND HD TL EMPTY
+%left TLIST
 
 %start <Lang.exp> prog
 
@@ -44,20 +47,23 @@ exp:
   | e1=exp GREAT e2=exp                                                   { EOp (EGreat, e1, e2) }
   | e1=exp EQUAL e2=exp                                                   { EOp (EEqual, e1, e2) }
   | IF e1=exp THEN e2=exp ELSE e3=exp                                     { EIf (e1, e2, e3) }
-  | LET x=VAR t=typ_asn EQ e1=exp IN e2=exp                               { ELet (x, t, e1, e2) }
+  | LET x=VAR COLON t=typ EQ e1=exp IN e2=exp                             { ELet (x, t, e1, e2) }
   | FUNC LPAREN x=VAR COLON t1=typ RPAREN COLON t2=typ ARROW e1=exp       { EFunc (x, t1, t2, e1) }
   | FIX f=VAR LPAREN x=VAR COLON t1=typ RPAREN COLON t2=typ ARROW e1=exp  { EFix (f, x, t1, t2, e1) }
   | e1=exp LPAREN e2=exp RPAREN                                           { EApp (e1, e2) }
   | LPAREN e1=exp COMMA e2=exp RPAREN                                     { EPair (e1, e2) }
   | FST e1=exp                                                            { EFst e1 }
   | SND e1=exp                                                            { ESnd e1 }
-
-  typ_asn:
-    | COLON t = typ             { t }
-
+  | LBRK RBRK COLON t1=typ %prec DCOLON                                   { EList t1 }
+  | e1=exp DCOLON e2=exp                                                  { ECons (e1, e2) }
+  | HD e1=exp                                                             { EHd (e1) }
+  | TL e1=exp                                                             { ETl (e1) }
+  | EMPTY e1=exp                                                          { EEmpty (e1) }
+  
   typ:
     | TINT                          { TInt }
     | TBOOL                         { TBoolean }
     | LPAREN t = typ RPAREN         { t }
     | t1 = typ ARROW t2 = typ       { TFunc (t1, t2) }
     | t1 = typ MULTIPLY t2 = typ    { TPair (t1, t2) }
+    | t = typ TLIST                 { TList t }
