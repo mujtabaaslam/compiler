@@ -1,8 +1,18 @@
 ===== test1 =====
+5
 ===== test2 =====
-[]
+[let,max2,:,int,->,(,int,->,int,),=,fun,(,x,:,int,),:,(,int,->,int,),->,fun,(,y,:,int,),:,int,->,if,x,>,y,then,x,else,y,in,let,a,:,int,=,5,in,let,b,:,int,=,2,in,max2,(,a,),(,b,)]
 ===== test3 =====
+let max2 : (int -> (int -> int)) = fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y in let a : int = 5 in let b : int = 2 in max2 (a) (b)
 ===== test4 =====
+-> let max2 : (int -> (int -> int)) = fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y in let a : int = 5 in let b : int = 2 in max2 (a) (b)
+-> let a : int = 5 in let b : int = 2 in fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y (a) (b)
+-> let b : int = 2 in fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y (5) (b)
+-> fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y (5) (2)
+-> fun (y:int) : int -> if 5 > y then 5 else y (2)
+-> if 5 > 2 then 5 else 2
+-> if true then 5 else 2
+-> 5
 ===== test5 =====
 -6
 ===== test6 =====

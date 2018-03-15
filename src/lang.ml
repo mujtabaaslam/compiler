@@ -214,10 +214,10 @@ let rec subst (v:exp) (x:string) (e:exp) : exp =
   | EOp (o, e1, e2)                                 -> EOp (o, sub e1, sub e2)
   | EIf (e1, e2, e3)                                -> EIf (sub e1, sub e2, sub e3)
   | EApp (e1, e2)                                   -> EApp (sub e1, sub e2)
-  | ELet (x', t, e1, e2) when x <> x'               -> ELet (x', t, sub e1, sub e2)
-  | EFunc (x', t1, t2, e') when x <> x'             -> EFunc (x', t1, t2, sub e')
-  | EFix (f, x', t1, t2, e') when x <> x' && x <> f -> EFunc (x', t1, t2, sub e')
-  | EVar x' when x = x'                             -> v
+  | ELet (x1, t, e1, e2) when x <> x1               -> ELet (x1, t, sub e1, sub e2)
+  | EFunc (x1, t1, t2, e1) when x <> x1             -> EFunc (x1, t1, t2, sub e1)
+  | EFix (f, x1, t1, t2, e1) when x <> x1 && x <> f -> EFix (f, x1, t1, t2, sub e1)
+  | EVar x1 when x = x1                             -> v
   | EPair (e1, e2)                                  -> EPair (sub e1, sub e2)
   | EFst e1                                         -> EFst (sub e1)
   | ESnd e1                                         -> ESnd (sub e1)
@@ -257,6 +257,7 @@ and interpretIf (e1:exp) (e2:exp) (e3:exp) : exp =
   | EOp(EGeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
   | EOp(EGreat, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
   | EOp(EEqual, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
+  | EEmpty _ as e1           -> interpret (EIf ((interpret e1), e2, e3))
   | _ -> error (sprintf "Expected a boolean expression got %s" (string_of_exp e1))
 and interpretLet (x:string) (t:typ) (e1:exp) (e2:exp) =
   let v1 = interpret e1 in interpret (subst v1 x e2)
@@ -323,18 +324,20 @@ and interpretEmpty (e:exp) : exp =
 
 let rec step (e:exp) : exp =
   match e with
-  | EOp (o, e1, e2)     -> stepOp o e1 e2
-  | EIf (e1, e2, e3)    -> stepIf e1 e2 e3
-  | ELet (x, t, e1, e2) -> stepLet x t e1 e2
-  | EApp (e1, e2)       -> stepApp e1 e2
-  | EPair (e1, e2)      -> stepPair e1 e2
-  | EFst e1             -> stepFst e1
-  | ESnd e2             -> stepSnd e2
-  | EHd e1              -> stepHd e1
-  | ETl e1              -> stepTl e1
-  | EEmpty e1           -> stepEmpty e1
-  | EVar x              -> error (sprintf "No value for variable '%s'" x)
-  | _ as e              -> e
+  | EOp (o, e1, e2)         -> stepOp o e1 e2
+  | EIf (e1, e2, e3)        -> stepIf e1 e2 e3
+  | ELet (x, t, e1, e2)     -> stepLet x t e1 e2
+  | EFunc (x, t1, t2, e1)   -> stepFunc x t1 t2 e1
+  | EFix (f, x, t1, t2, e1) -> stepFix f x t1 t2 e1
+  | EApp (e1, e2)           -> stepApp e1 e2
+  | EPair (e1, e2)          -> stepPair e1 e2
+  | EFst e1                 -> stepFst e1
+  | ESnd e2                 -> stepSnd e2
+  | EHd e1                  -> stepHd e1
+  | ETl e1                  -> stepTl e1
+  | EEmpty e1               -> stepEmpty e1
+  | EVar x                  -> error (sprintf "No value for variable '%s'" x)
+  | _ as e                  -> e
 and stepOp (o:op) (e1:exp) (e2:exp) : exp =
   if is_value e1 && is_value e2 then interpretOp o e1 e2
   else if is_value e1 then EOp (o, e1, step e2)
@@ -347,6 +350,10 @@ and stepIf (e1:exp) (e2:exp) (e3:exp) : exp =
    else EIf (step e1, e2, e3)
 and stepLet (x:string) (t:typ) (e1:exp) (e2:exp) : exp =
   if is_value e1 then subst e1 x e2 else ELet (x, t, step e1, e2)
+and stepFunc (x:string) (t1:typ) (t2:typ) (e:exp) : exp =
+  let e1 = if is_value e then e else step e in EFunc (x, t1, t2, e1)
+and stepFix (f:string) (x:string) (t1:typ) (t2:typ) (e:exp) : exp =
+  let e1 = if is_value e then e else step e in EFix (f, x, t1, t2, e1)
 and stepApp (e1:exp) (e2:exp) : exp =
   if is_value e1 && is_value e2 then
     match e1 with
