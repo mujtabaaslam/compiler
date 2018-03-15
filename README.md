@@ -22,11 +22,11 @@ t ::= int | bool | t1 -> t2 | unit | t1 * t2 | [t]
 
 It also supports five command flags:
 
--lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
--parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
--step -- processes the input and prints out every step of evaluation  
--help --  Display this list of options  
---help -- Display this list of options  
+`-lex` -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
+`-parse` -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
+`-step` -- processes the input and prints out every step of evaluation  
+`-help` --  Display this list of options  
+`--help` -- Display this list of options  
 
 
 ## Setup Instructions
