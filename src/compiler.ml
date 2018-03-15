@@ -45,6 +45,10 @@ let string_of_token (t:token) : string =
   | TL        -> "tl"
   | EMPTY     -> "empty"
   | TLIST     -> "list"
+  | REF       -> "ref"
+  | COLONEQ   -> ":="
+  | EXC       -> "!"
+  | SCOLON    -> ";"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
@@ -62,18 +66,20 @@ let start_up(f:string) =
           | Parser.EOF -> Printf.printf "["; Printf.printf "%s" (string_of_token_list (List.rev tokens)); Printf.printf "]\n"
           | _ -> lexing (t :: tokens)
           in lexing []
-    else let ast = Parser.prog Lexer.token lexbuf in
+    else
+    let ast = Parser.prog Lexer.token lexbuf in
       if !parse then
-        string_of_exp ast |> print_endline
+        string_of_exp Environ.empty ast |> print_endline
       else if !step then
         begin
-          typecheck Context.empty ast |> ignore;
+          type_check ast |> ignore;
           step_interpret ast
         end
       else
         begin
-          typecheck Context.empty ast |> ignore;
-          interpret ast |> string_of_exp |> print_endline
+        type_check ast |> ignore;
+        let state = interpret ast in
+        string_of_exp (fst state) (snd state) |> print_endline
         end
 
 let main () =

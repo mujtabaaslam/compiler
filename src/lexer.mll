@@ -38,6 +38,10 @@ let symbols : (string * Parser.token) list =
   ; ("tl", TL)
   ; ("empty", EMPTY)
   ; ("list", TLIST)
+  ; ("ref", REF)
+  ; (":=", COLONEQ)
+  ; ("!", EXC)
+  ; (";", SCOLON)
   ]
 
 let create_symbol lexbuf =
@@ -96,6 +100,10 @@ rule token = parse
     "hd"    |
     "tl"    |
     "empty" |
-    "list" { create_symbol lexbuf }
+    "list"  |
+    "ref"   |
+    ":="    |
+    '!'     |
+    ';'      { create_symbol lexbuf }
   | var                       { VAR (lexeme lexbuf) }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c ^ (position lexbuf)) }

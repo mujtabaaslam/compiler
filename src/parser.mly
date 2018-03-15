@@ -14,9 +14,11 @@
 %token FIX FUNC ARROW
 %token COMMA FST SND
 %token LBRK RBRK DCOLON HD TL EMPTY TLIST
+%token REF COLONEQ EXC SCOLON
 %token EOF
 
 %left IN ARROW
+%right SCOLON
 %left ELSE
 %left LEQ LESS GEQ GREAT EQUAL
 %right DCOLON
@@ -24,6 +26,7 @@
 %left MULTIPLY DIVIDE
 %nonassoc LPAREN
 %nonassoc FST SND HD TL EMPTY
+%nonassoc EXC
 
 %start <Lang.exp> prog
 
@@ -60,11 +63,16 @@ exp:
   | HD e1=exp                                                             { EHd (e1) }
   | TL e1=exp                                                             { ETl (e1) }
   | EMPTY e1=exp                                                          { EEmpty (e1) }
+  | REF e1=exp                                                            { ERef e1 }
+  | e1=exp COLONEQ e2=exp                                                 { EAsn (e1, e2) }
+  | EXC e1=exp                                                            { EDeref e1 }
+  | e1=exp SCOLON e2=exp                                                  { EScol (e1, e2) }
 
   typ:
     | TINT                          { TInt }
     | TBOOL                         { TBoolean }
-    | LPAREN t = typ RPAREN         { t }
-    | t1 = typ ARROW t2 = typ       { TFunc (t1, t2) }
-    | t1 = typ MULTIPLY t2 = typ    { TPair (t1, t2) }
-    | t = typ TLIST                 { TList t }
+    | LPAREN t=typ RPAREN           { t }
+    | t1=typ ARROW t2=typ           { TFunc (t1, t2) }
+    | t1=typ MULTIPLY t2=typ        { TPair (t1, t2) }
+    | t=typ TLIST                   { TList t }
+    | LESS t=typ GREAT              { TRef t }
