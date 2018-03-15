@@ -40,9 +40,9 @@ Run the compiler program using the command `./compiler.native [flag] [file]` whe
 
 # CLI  
 cli takes an amount of arguments and prints them out in order, one in each line. It also supports three command flags:  
--length -- prints out the lengths of the arguments instead of the arguments themselves.  
--help -- prints out a usage message for cli.  
---help -- prints out a usage message for cli.  
+`-length` -- prints out the lengths of the arguments instead of the arguments themselves.  
+`-help` -- prints out a usage message for cli.  
+`--help` -- prints out a usage message for cli.  
 
 ## Setup Instructions
 CLI uses the core library for OCaml. The ocamlc compiler is used to build this program.
