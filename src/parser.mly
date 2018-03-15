@@ -16,13 +16,14 @@
 %token LBRK RBRK DCOLON HD TL EMPTY TLIST
 %token EOF
 
-%nonassoc ELSE IN ARROW
-%nonassoc LEQ LESS GEQ GREAT EQUAL
+%left IN ARROW
+%left ELSE
+%left LEQ LESS GEQ GREAT EQUAL
+%right DCOLON
 %left PLUS MINUS
 %left MULTIPLY DIVIDE
 %nonassoc LPAREN
 %nonassoc FST SND HD TL EMPTY
-%left TLIST
 
 %start <Lang.exp> prog
 
@@ -59,7 +60,7 @@ exp:
   | HD e1=exp                                                             { EHd (e1) }
   | TL e1=exp                                                             { ETl (e1) }
   | EMPTY e1=exp                                                          { EEmpty (e1) }
-  
+
   typ:
     | TINT                          { TInt }
     | TBOOL                         { TBoolean }
