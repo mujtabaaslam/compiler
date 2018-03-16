@@ -35,6 +35,7 @@
 %%
 
 prog:
+  | EOF                                 { End }
   | e=exp EOF                           { e }
 
 exp:
