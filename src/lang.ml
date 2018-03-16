@@ -106,7 +106,7 @@ and string_of_cons g (e1:exp) (e2:exp) : string =
     match e2 with
     | EList t -> sprintf "[] : %s" (string_of_typ t)
     | ECons (e1, e2) -> string_of_cons g e1 e2
-    | _ -> error (sprintf "Expected a cons, got %s" (string_of_exp g e2))
+    | _ -> error (sprintf "Expected cons, got %s" (string_of_exp g e2))
   in
   sprintf "%s :: %s" (string_of_exp g e1) str
 and string_of_arr g (n:int) (l:int) =
@@ -134,13 +134,13 @@ let string_of_exp e = string_of_exp Environ.empty e  in
       | EAdd | ESubtract | EMultiplication | EDivision ->
         begin match (t1, t2) with
           | (TInt, TInt) -> TInt
-          | _ -> error (sprintf "Expected type int %s, got %s and %s"
+          | _ -> error (sprintf "Expected type int %s, got type %s and type %s"
                           (string_of_exp e) (string_of_typ t1) (string_of_typ t2))
         end
       | ELeq | ELess | EGeq | EGreat | EEqual ->
         begin match (t1, t2) with
           | (TInt, TInt) -> TBoolean
-          | _ -> error (sprintf "Expected type int in %s, got %s and %s"
+          | _ -> error (sprintf "Expected type int in %s, got type %s and type %s"
                           (string_of_exp e) (string_of_typ t1) (string_of_typ t2))
         end
     end
@@ -152,7 +152,7 @@ let string_of_exp e = string_of_exp Environ.empty e  in
       error (sprintf "Expected type bool in %s, got type %s"
                (string_of_exp e) (string_of_typ t1))
     else if t2 <> t3 then
-      error (sprintf "Expected the same type for the two subexpression in %s, got type %s and %s"
+      error (sprintf "Expected the same type %s, got type %s and %s"
                (string_of_exp e) (string_of_typ t2) (string_of_typ t3))
     else t2
   | ELet (x, t, e1, e2) ->
@@ -269,7 +269,7 @@ let string_of_exp e = string_of_exp Environ.empty e  in
     let t1 = typecheck g e1 in
     let t2 = typecheck g e2 in
     if t1 <> TBoolean then
-      error (sprintf "Expected type bool for cond. guard of %s, got type %s"
+      error (sprintf "Expected type bool in %s, got type %s"
                (string_of_exp e) (string_of_typ t1))
     else if t2 <> TUnit then
       error (sprintf "Expected type unit for %s in %s, got type %s"
@@ -497,12 +497,12 @@ and stepArac (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
     let i =
       match e2 with
       | EInt n1 -> n1
-      | _ -> error (sprintf "Expected an int, got %s" (string_of_exp g e2))
+      | _ -> error (sprintf "Expected an integer, got %s" (string_of_exp g e2))
       in
       match e1 with
       | Arr (n, l) ->
       if i < 0 || i >= l then
-        error (sprintf "Array index out of bound. Expected 0 <= i < %s, got i = %s"
+        error (sprintf "Array index out of bound. Should be < %s, got i = %s"
                (string_of_int l) (string_of_int i))
       else
         g, Ptr (n + i)
@@ -524,7 +524,6 @@ and stepInt (o:op) (n1:int) (n2:int) =
   | EGeq            -> EBoolean (n1 >= n2)
   | ELess           -> EBoolean (n1 < n2)
   | EGreat          -> EBoolean (n1 > n2)
-  (*| _               -> error (sprintf "Expected 2 numbers for the operator '%s'" (string_of_op Environ.empty o))*)
 
 let rec step_eval (g:exp Environ.t) (e:exp) =
   if is_value e then
