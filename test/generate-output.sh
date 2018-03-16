@@ -78,3 +78,27 @@ echo "===== test39 ====="
 ./compiler.native -parse test/test9.txt
 echo "===== test40 ====="
 ./compiler.native -step test/test9.txt
+echo "===== test41 ====="
+./compiler.native test/test10.txt
+echo "===== test42 ====="
+./compiler.native -lex test/test10.txt
+echo "===== test43 ====="
+./compiler.native -parse test/test10.txt
+echo "===== test44 ====="
+./compiler.native -step test/test10.txt
+echo "===== test45 ====="
+./compiler.native test/test11.txt
+echo "===== test46 ====="
+./compiler.native -lex test/test11.txt
+echo "===== test47 ====="
+./compiler.native -parse test/test11.txt
+echo "===== test48 ====="
+./compiler.native -step test/test11.txt
+echo "===== test49 ====="
+./compiler.native test/test12.txt
+echo "===== test50 ====="
+./compiler.native -lex test/test12.txt
+echo "===== test51 ====="
+./compiler.native -parse test/test12.txt
+echo "===== test52 ====="
+./compiler.native -step test/test12.txt
