@@ -1,0 +1,4 @@
+let x : <int> = ref 15 in
+while !x < 20 do
+  x := !x + 1
+end; x

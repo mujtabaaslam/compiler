@@ -1,4 +1,7 @@
 open Printf
+module Context = Map.Make(String)
+module Env = Map.Make(struct type t = int let compare = compare end)
+
 
 type op = EAdd | ESubtract | EMultiplication | EDivision | ELeq | ELess | EGeq | EGreat | EEqual
 
@@ -9,6 +12,8 @@ type typ =
   | TUnit
   | TPair of typ * typ
   | TList of typ
+  | TRef of typ
+  | TArr of typ
 
 type exp =
 | EUnit
@@ -29,6 +34,17 @@ type exp =
 | EHd of exp
 | ETl of exp
 | EEmpty of exp
+| ERef of exp
+| EAsn of exp * exp
+| EDeref of exp
+| EScol of exp * exp
+| Ptr of int
+| EWhile of exp * exp
+| EArr of typ * exp
+| EArac of exp * exp
+| Arr of int * int
+
+let add = ref 0
 
 let error (msg:string) =
   fprintf stderr "Error: %s\n" msg; exit 1
@@ -41,50 +57,67 @@ let rec string_of_typ (t:typ) : string =
   | TFunc (t1, t2) -> sprintf "(%s -> %s)" (string_of_typ t1) (string_of_typ t2)
   | TPair (t1, t2) -> sprintf "(%s * %s)" (string_of_typ t1) (string_of_typ t2)
   | TList t        -> string_of_typ t ^ " list"
+  | TRef t         -> sprintf "<%s>" (string_of_typ t)
+  | TArr t         -> sprintf "array<%s>" (string_of_typ t)
 
-let rec string_of_exp (e:exp) : string =
+let rec string_of_exp g (e:exp) : string =
   match e with
-  | EOp (o, e1, e2)          -> string_of_op o e1 e2
-  | EIf (e1, e2, e3)         -> sprintf "if %s then %s else %s" (string_of_exp e1) (string_of_exp e2) (string_of_exp e3)
+  | EOp (o, e1, e2)          -> string_of_op g o e1 e2
+  | EIf (e1, e2, e3)         -> sprintf "if %s then %s else %s" (string_of_exp g e1) (string_of_exp g e2) (string_of_exp g e3)
   | EBoolean b               -> string_of_bool b
   | EInt n                   -> string_of_int n
   | EVar x                   -> x
   | EUnit                    -> "()"
-  | ELet (x, t, v, e1)       -> sprintf "let %s : %s = %s in %s" x (string_of_typ t) (string_of_exp v) (string_of_exp e1)
-  | EFunc (x, t1, t2, e1)    -> sprintf "fun (%s:%s) : %s -> %s" x (string_of_typ t1) (string_of_typ t2) (string_of_exp e1)
-  | EFix (f, x, t1, t2, e1)  -> sprintf "fix %s (%s:%s) : %s -> %s" f x (string_of_typ t1) (string_of_typ t2) (string_of_exp e1)
-  | EApp (e1, e2)            -> sprintf "%s (%s)" (string_of_exp e1) (string_of_exp e2)
-  | EPair (e1, e2)           -> sprintf "(%s, %s)" (string_of_exp e1) (string_of_exp e2)
-  | EFst e1                  -> sprintf "(fst %s)" (string_of_exp e1)
-  | ESnd e1                  -> sprintf "(snd %s)" (string_of_exp e1)
+  | ELet (x, t, v, e1)       -> sprintf "let %s : %s = %s in %s" x (string_of_typ t) (string_of_exp g v) (string_of_exp g e1)
+  | EFunc (x, t1, t2, e1)    -> sprintf "fun (%s:%s) : %s -> %s" x (string_of_typ t1) (string_of_typ t2) (string_of_exp g e1)
+  | EFix (f, x, t1, t2, e1)  -> sprintf "fix %s (%s:%s) : %s -> %s" f x (string_of_typ t1) (string_of_typ t2) (string_of_exp g e1)
+  | EApp (e1, e2)            -> sprintf "%s (%s)" (string_of_exp g e1) (string_of_exp g e2)
+  | EPair (e1, e2)           -> sprintf "(%s, %s)" (string_of_exp g e1) (string_of_exp g e2)
+  | EFst e1                  -> sprintf "fst %s" (string_of_exp g e1)
+  | ESnd e1                  -> sprintf "snd %s" (string_of_exp g e1)
   | EList t                  -> sprintf "[] : %s" (string_of_typ t)
-  | ECons (e1, e2)           -> string_of_cons e1 e2
-  | EHd e1                   -> sprintf "(hd %s)" (string_of_exp e1)
-  | ETl e1                   -> sprintf "(tl %s)" (string_of_exp e1)
-  | EEmpty e1                -> sprintf "(empty %s)" (string_of_exp e1)
-and string_of_op (o:op) (e1:exp) (e2:exp) : string =
+  | ECons (e1, e2)           -> string_of_cons g e1 e2
+  | EHd e1                   -> sprintf "hd %s" (string_of_exp g e1)
+  | ETl e1                   -> sprintf "tl %s" (string_of_exp g e1)
+  | EEmpty e1                -> sprintf "empty %s" (string_of_exp g e1)
+  | ERef e1                  -> sprintf "ref %s" (string_of_exp g e1)
+  | EAsn (e1, e2)            -> sprintf "%s := %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EDeref e1                -> sprintf "!%s" (string_of_exp g e1)
+  | EScol (e1, e2)           -> sprintf "%s; %s" (string_of_exp g e1) (string_of_exp g e2)
+  | Ptr n                    -> sprintf "Ptr(%d):{%s}" n (string_of_exp g (Env.find n g))
+  | EWhile (e1, e2)          -> sprintf "while %s do %s end" (string_of_exp g e1) (string_of_exp g e2)
+  | EArr (t, e1)             -> sprintf "new %s[%s]" (string_of_typ t) (string_of_exp g e1)
+  | EArac (e1, e2)           -> sprintf "%s[%s]" (string_of_exp g e1) (string_of_exp g e2)
+  | Arr (n, l)               -> string_of_arr g n l
+and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
-  | EAdd             -> sprintf "%s + %s" (string_of_exp e1) (string_of_exp e2)
-  | ESubtract        -> sprintf "%s - %s" (string_of_exp e1) (string_of_exp e2)
-  | EMultiplication  -> sprintf "%s * %s" (string_of_exp e1) (string_of_exp e2)
-  | EDivision        -> sprintf "%s / %s" (string_of_exp e1) (string_of_exp e2)
-  | ELeq             -> sprintf "%s <= %s" (string_of_exp e1) (string_of_exp e2)
-  | ELess            -> sprintf "%s < %s" (string_of_exp e1) (string_of_exp e2)
-  | EGeq             -> sprintf "%s >= %s" (string_of_exp e1) (string_of_exp e2)
-  | EGreat           -> sprintf "%s > %s" (string_of_exp e1) (string_of_exp e2)
-  | EEqual           -> sprintf "%s == %s" (string_of_exp e1) (string_of_exp e2)
-and string_of_cons (e1:exp) (e2:exp) : string =
+  | EAdd             -> sprintf "%s + %s" (string_of_exp g e1) (string_of_exp g e2)
+  | ESubtract        -> sprintf "%s - %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EMultiplication  -> sprintf "%s * %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EDivision        -> sprintf "%s / %s" (string_of_exp g e1) (string_of_exp g e2)
+  | ELeq             -> sprintf "%s <= %s" (string_of_exp g e1) (string_of_exp g e2)
+  | ELess            -> sprintf "%s < %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EGeq             -> sprintf "%s >= %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EGreat           -> sprintf "%s > %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EEqual           -> sprintf "%s == %s" (string_of_exp g e1) (string_of_exp g e2)
+and string_of_cons g (e1:exp) (e2:exp) : string =
   let str  =
     match e2 with
     | EList t -> sprintf "[] : %s" (string_of_typ t)
-    | ECons (e1, e2) -> string_of_cons e1 e2
-    | _ -> error (sprintf "Expected a cons, got %s" (string_of_exp e2))
+    | ECons (e1, e2) -> string_of_cons g e1 e2
+    | _ -> error (sprintf "Expected cons, got %s" (string_of_exp g e2))
   in
-  sprintf "(%s :: %s)" (string_of_exp e1) str
-
-module Context = Map.Make(String)
+  sprintf "%s :: %s" (string_of_exp g e1) str
+and string_of_arr g (n:int) (l:int) =
+  let stop = n + l in
+  let rec list_ptr cur acc =
+    if cur = stop then acc
+    else list_ptr (cur + 1) (sprintf "Ptr(%d):{%s}" cur (string_of_exp g (Env.find cur g)) :: acc)
+  in
+  sprintf "[%s]" (String.concat ", " (List.rev (list_ptr n [])))
 
 let rec typecheck (g:typ Context.t) (e:exp) : typ =
+let string_of_exp e = string_of_exp Env.empty e  in
   match e with
   | EUnit       -> TUnit
   | EInt _      -> TInt
@@ -145,22 +178,20 @@ let rec typecheck (g:typ Context.t) (e:exp) : typ =
         if t2 = t1 then t3
         else
           error (sprintf "Type %s expected for variable %s in %s, got type %s" (string_of_typ t1) (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
-          | _ ->  error (sprintf "Function expected for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t))
+      | _ ->  error (sprintf "Function expected for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t))
     end
   | EPair (e1, e2) -> TPair (typecheck g e1, typecheck g e2)
   | EFst e1 ->
     let t = typecheck g e1 in
     begin match t with
       | TPair (t1, _) -> t1
-      | _ -> error (sprintf "Pair expected for %s in %s, got %s"
-                      (string_of_exp e1) (string_of_exp e) (string_of_typ t))
+      | _ -> error (sprintf "Pair expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t))
     end
   | ESnd e1 ->
     let t = typecheck g e1 in
     begin match t with
       | TPair (_, t2) -> t2
-      | _ -> error (sprintf "Pair expected for %s in %s, got %s"
-                      (string_of_exp e1) (string_of_exp e) (string_of_typ t))
+      | _ -> error (sprintf "Pair expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t))
     end
   | EList t -> TList t
   | ECons (e1, e2) ->
@@ -169,38 +200,84 @@ let rec typecheck (g:typ Context.t) (e:exp) : typ =
     let t =
       begin match t2 with
         | TList t -> t
-        | _ -> error (sprintf "List expected for %s in %s, got %s"
-                        (string_of_exp e1) (string_of_exp e) (string_of_typ t2))
+        | _ -> error (sprintf "List expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t2))
       end
     in
     if t1 = t then t2
     else
-      error (sprintf "Expected type %s for %s in %s, got %s"
-               (string_of_typ t) (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+      error (sprintf "Expected type %s for %s in %s, got %s" (string_of_typ t) (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
   | EHd e1 ->
     let t1 = typecheck g e1 in
     begin match t1 with
       | TList t -> t
-      | _ -> error (sprintf "List expected for %s in %s, got %s"
-                      (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+      | _ -> error (sprintf "List expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
     end
   | ETl e1 ->
     let t1 = typecheck g e1 in
     begin match t1 with
       | TList _ -> t1
-      | _ -> error (sprintf "List expected for %s in %s, got %s"
-                      (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+      | _ -> error (sprintf "List expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
     end
   | EEmpty e1 ->
     let t1 = typecheck g e1 in
     begin match t1 with
       | TList _ -> TBoolean
-      | _ -> error (sprintf "List expected for %s in %s, got %s"
-                      (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+      | _ -> error (sprintf "List expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
     end
+  | ERef e1 -> TRef (typecheck g e1)
+  | EAsn (e1, e2) ->
+    let t1 = typecheck g e1 in
+    let t =
+      match t1 with
+      | TRef t1 -> t1
+      | _ -> error (sprintf "Ref expected for %s, got type %s" (string_of_exp e1) (string_of_typ t1))
+    in
+    let t2 = typecheck g e2 in
+    if t2 = t then TUnit
+    else error (sprintf "Expected type %s for %s, got type %s" (string_of_typ t) (string_of_exp e2) (string_of_typ t2))
+  | EDeref e1 ->
+    let t1 = typecheck g e1 in
+    begin
+    match t1 with
+    | TRef t -> t
+    | _ -> error (sprintf "Ref expected for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+    end
+    | EScol (e1, e2) ->
+      let t1 = typecheck g e1 in
+      begin match t1 with
+        | TUnit -> typecheck g e2
+        | _ -> error (sprintf "Expected type unit for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+      end
+    |  EWhile (e1, e2) ->
+    let t1 = typecheck g e1 in
+    let t2 = typecheck g e2 in
+    if t1 <> TBoolean then
+      error (sprintf "Bool expected in %s, got type %s"
+               (string_of_exp e) (string_of_typ t1))
+    else if t2 <> TUnit then
+      error (sprintf "Unit expected for %s in %s, got type %s"
+               (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
+    else TUnit
+    | EArr (t, e1) ->
+    let t1 = typecheck g e1 in
+    if t1 = TInt then TArr t
+    else error (sprintf "Int expected for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+    | EArac (e1, e2) ->
+    let t2 = typecheck g e2 in
+    if t2 = TInt then
+      let t1 = typecheck g e1 in
+      match t1 with
+      | TArr t -> TRef t
+      | _ -> error (sprintf "Array expected for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+    else
+      error (sprintf "Int expected for %s in %s, got type %s" (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
+    | _ -> error "Typecheck does not exist"
 
-let rec sub (v:exp) (x:string) (e:exp) : exp =
-  let s exp = sub v x exp in
+let type_check (e:exp) : typ =
+  typecheck Context.empty e
+
+let rec sub (g:exp Env.t) (v:exp) (x:string) (e:exp) : exp =
+  let s exp = sub g v x exp in
   match e with
   | EOp (o, e1, e2)                                 -> EOp (o, s e1, s e2)
   | EIf (e1, e2, e3)                                -> EIf (s e1, s e2, s e3)
@@ -216,178 +293,232 @@ let rec sub (v:exp) (x:string) (e:exp) : exp =
   | EHd e1                                          -> EHd (s e1)
   | ETl e1                                          -> ETl (s e1)
   | EEmpty e1                                       -> EEmpty (s e1)
+  | ERef e1                                         -> ERef (s e1)
+  | EAsn (e1, e2)                                   -> EAsn (s e1, s e2)
+  | EDeref e1                                       -> EDeref (s e1)
+  | EScol (e1, e2)                                  -> EScol (s e1, s e2)
+  | EWhile (e1, e2)                                 -> EWhile (s e1, s e2)
+  | EArr (t, e1)                                    -> EArr (t, s e1)
+  | EArac (e1, e2)                                  -> EArac (s e1, s e2)
   | _ as e                                          -> e
 
-  let rec is_value (e:exp) : bool =
-    match e with
-     | EInt _ | EBoolean _ | EUnit
-     | EFunc (_, _, _, _) | EFix (_, _, _, _, _)
-     | EList _ | ECons (_, _)                    -> true
-     | EPair (e1, e2) -> is_value e1 && is_value e2
-     | _                                         -> false
-
-let rec interpret (e:exp) : exp =
+let rec is_value (e:exp) : bool =
   match e with
-  | EOp (o, e1, e2)     -> interpretOp o e1 e2
-  | EIf (e1, e2, e3)    -> interpretIf e1 e2 e3
-  | ELet (x, t, e1, e2) -> interpretLet x t e1 e2
-  | EApp (e1, e2)       -> interpretApp e1 e2
-  | EPair (e1, e2)      -> interpretPair e1 e2
-  | EFst e1             -> interpretFst e1
-  | ESnd e1             -> interpretSnd e1
-  | EHd e1              -> interpretHd e1
-  | ETl e1              -> interpretTl e1
-  | EEmpty e1           -> interpretEmpty e1
-  | EVar x              -> error (sprintf "No value found for variable '%s'" x)
-  | _ as e              -> e
-and interpretIf (e1:exp) (e2:exp) (e3:exp) : exp =
-  match e1 with
-  | EBoolean b               -> if b then interpret e2 else interpret e3
-  | EOp(ELeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
-  | EOp(ELess, _, _) as e1   -> interpret (EIf ((interpret e1), e2, e3))
-  | EOp(EGeq, _, _) as e1    -> interpret (EIf ((interpret e1), e2, e3))
-  | EOp(EGreat, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
-  | EOp(EEqual, _, _) as e1  -> interpret (EIf ((interpret e1), e2, e3))
-  | EEmpty _ as e1           -> interpret (EIf ((interpret e1), e2, e3))
-  | _ -> error (sprintf "Boolean expected, got %s" (string_of_exp e1))
-and interpretLet (x:string) (t:typ) (e1:exp) (e2:exp) =
-  let v1 = interpret e1 in interpret (sub v1 x e2)
-and interpretApp (e1:exp) (e2:exp) : exp =
-  let f = interpret e1 in
-  let v2 = interpret e2 in
-  match f with
-  | EFunc (x, t1, t2, e3)    -> interpret (sub v2 x e3)
-  | EFix (f1, x, t1, t2, e3) -> interpret (sub f f1 (sub v2 x e3))
-  | _ -> error (sprintf "Function expected, got %s" (string_of_exp e1))
-and interpretOp (o:op) (e1:exp) (e2:exp) : exp =
-  let v1 = interpret e1 in
-  let v2 = interpret e2 in
-  match (v1, v2) with
-  | (EInt n1, EInt n2) -> interpretInt o n1 n2
-  | _ -> error (sprintf "Numeric expressions expected, got %s and %s" (string_of_exp e1) (string_of_exp e2))
-and interpretInt (o:op) (v1:int) (v2:int) : exp =
-  match o with
-  | EAdd            -> EInt (v1 + v2)
-  | ESubtract       -> EInt (v1 - v2)
-  | EMultiplication -> EInt (v1 * v2)
-  | EDivision       -> EInt (v1 / v2)
-  | ELeq            -> EBoolean (v1 <= v2)
-  | ELess           -> EBoolean (v1 < v2)
-  | EGeq            -> EBoolean (v1 >= v2)
-  | EGreat          -> EBoolean (v1 > v2)
-  | EEqual          -> EBoolean (v1 = v2)
-and interpretPair (e1:exp) (e2:exp) : exp =
-  if is_value e1 && is_value e2 then EPair (e1, e2)
-  else if (is_value e1 = false) && (is_value e2 = false) then EPair (interpret e1, interpret e2)
-  else if is_value e1 then EPair (e1, interpret e2)
-  else EPair (interpret e1, e2)
-and interpretFst (e:exp) : exp =
-  if is_value e then
-    match e with
-    | EPair (e1, _) -> interpret e1
-    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp e))
-    else EFst (interpret e)
-and interpretSnd (e:exp) : exp =
-  if is_value e then
-    match e with
-    | EPair (_, e2) -> interpret e2
-    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp e))
-  else ESnd (interpret e)
-and interpretHd (e:exp) : exp =
-  if is_value e then
-    match e with
-    | ECons (e1, _) -> interpret e1
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else EHd (interpret e)
-and interpretTl (e:exp) : exp =
-  if is_value e then
-    match e with
-    | ECons (_, e2) -> interpret e2
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else ETl (interpret e)
-and interpretEmpty (e:exp) : exp =
-  if is_value e then
-    match e with
-    | EList _       -> EBoolean true
-    | ECons (_, _)  -> EBoolean false
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else EEmpty (interpret e)
+  | EInt _ | EBoolean _ | EUnit
+  | EFunc (_, _, _, _) | EFix (_, _, _, _, _)
+  | EList _ | ECons (_, _) | Ptr _ | Arr (_, _) -> true
+  | EPair (e1, e2) -> is_value e1 && is_value e2
+  | _                                           -> false
 
-let rec step (e:exp) : exp =
+let left (s:exp Env.t * exp) =
+  match s with (g, _) -> g
+
+let right (s:exp Env.t * exp) =
+  match s with (_, e) -> e
+
+let rec eval (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then (g, e)
+  else let s = step g e in eval (left s) (right s)
+and step (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
   match e with
-  | EOp (o, e1, e2)         -> stepOp o e1 e2
-  | EIf (e1, e2, e3)        -> stepIf e1 e2 e3
-  | ELet (x, t, e1, e2)     -> stepLet x t e1 e2
-  | EApp (e1, e2)           -> stepApp e1 e2
-  | EPair (e1, e2)          -> stepPair e1 e2
-  | EFst e1                 -> stepFst e1
-  | ESnd e2                 -> stepSnd e2
-  | EHd e1                  -> stepHd e1
-  | ETl e1                  -> stepTl e1
-  | EEmpty e1               -> stepEmpty e1
-  | EVar x                  -> error (sprintf "Empty variable '%s'" x)
-  | _ as e                  -> e
-and stepOp (o:op) (e1:exp) (e2:exp) : exp =
-  if is_value e1 && is_value e2 then interpretOp o e1 e2
-  else if is_value e1 then EOp (o, e1, step e2)
-  else EOp (o, step e1, e2)
-and stepIf (e1:exp) (e2:exp) (e3:exp) : exp =
+  | EOp (o, e1, e2)         -> stepOp g o e1 e2
+  | EIf (e1, e2, e3)        -> stepIf g e1 e2 e3
+  | ELet (x, t, e1, e2)     -> stepLet g x t e1 e2
+  | EApp (e1, e2)           -> stepApp g e1 e2
+  | EPair (e1, e2)          -> stepPair g e1 e2
+  | EFst e1                 -> stepFst g e1
+  | ESnd e2                 -> stepSnd g e2
+  | EHd e1                  -> stepHd g e1
+  | ETl e1                  -> stepTl g e1
+  | EEmpty e1               -> stepEmpty g e1
+  | ERef e                  -> stepRef g e
+  | EAsn (e1, e2)           -> stepAsn g e1 e2
+  | EDeref e1               -> stepDeref g e1
+  | EScol (e1, e2)          -> stepScol g e1 e2
+  | EWhile (e1, e2)         -> stepWhile g e1 e2
+  | EArr (t, e1)            -> stepArr g t e1
+  | EArac (e1, e2)          -> stepArac g e1 e2
+  | e                       -> g, e
+and stepOp (g:exp Env.t) (o:op) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+  if is_value e1 && is_value e2 then
+    let v =
+      match (e1, e2) with
+      | (EInt n1, EInt n2)     -> stepInt o n1 n2
+      | _ -> error (sprintf "Expected 2 numbers, got %s and %s"
+                    (string_of_exp g e1) (string_of_exp g e2))
+  in g, v
+else if is_value e1 then
+  let s = step g e2 in left s, EOp (o, e1, right s)
+else
+  let s = step g e1 in left s, EOp (o, right s, e2)
+and stepIf (g:exp Env.t) (e1:exp) (e2:exp) (e3:exp) : (exp Env.t * exp) =
   if is_value e1 then
     match e1 with
-    | EBoolean b -> if b then step e2 else step e3
-    | _          -> error (sprintf "Boolean expected, got %s" (string_of_exp e1))
-   else EIf (step e1, e2, e3)
-and stepLet (x:string) (t:typ) (e1:exp) (e2:exp) : exp =
-  if is_value e1 then sub e1 x e2 else ELet (x, t, step e1, e2)
-and stepApp (e1:exp) (e2:exp) : exp =
+    | EBoolean b -> if b then step g e2 else step g e3
+    | _          -> if is_value e2 then
+                      let s = step g e3 in left s, EIf (e1, e2, right s)
+                    else
+                      let s = step g e2 in left s, EIf (e1, right s, e3)
+  else
+    let s = step g e1 in left s, EIf (right s, e2, e3)
+and stepLet (g:exp Env.t) (x:string) (t:typ) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+if is_value e1 then g, sub g e1 x e2
+else
+  let s = step g e1 in left s, ELet (x, t, right s, e2)
+and stepApp (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+if is_value e1 && is_value e2 then
+  let e =
+    match e1 with
+    | EFunc (x, t1, t2, e3)   -> sub g e2 x e3
+    | EFix (f, x, t1, t2, e3) -> sub g e1 f (sub g e2 x e3)
+    | _ -> error (sprintf "Function expected, got %s" (string_of_exp g e1))
+  in g, e
+else if is_value e1 then
+  let s = step g e2 in left s, EApp (e1, right s)
+else
+  let s = step g e1 in left s, EApp (right s, e2)
+and stepPair (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+  if is_value e1 && is_value e2 then g, EPair (e1, e2)
+  else if is_value e1 then
+    let s = step g e2 in left s, EPair (e1, right s)
+  else
+    let s = step g e1 in left s, EPair (right s, e2)
+and stepFst (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    match e with
+    | EPair (e1, _) -> g, e1
+    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp g e))
+  else
+    let s = step g e in left s, EFst (right s)
+and stepSnd (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    match e with
+    | EPair (_, e2) -> g, e2
+    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp g e))
+  else
+    let s = step g e in left s, ESnd (right s)
+and stepHd (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    match e with
+    | ECons (e1, _) -> g, e1
+    | _ -> error (sprintf "List expected, got %s" (string_of_exp g e))
+  else
+    let s = step g e in left s, EHd (right s)
+and stepTl (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    match e with
+    | ECons (_, e2) -> g, e2
+    | _ -> error (sprintf "List expected, got %s" (string_of_exp g e))
+  else
+    let s = step g e in left s, ETl (right s)
+and stepEmpty (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    let v =
+      match e with
+      | EList _      -> EBoolean true
+      | ECons (_, _) -> EBoolean false
+      | _ -> error (sprintf "List expected, got %s" (string_of_exp g e))
+    in g, v
+  else
+    let s = step g e in left s, EEmpty (right s)
+and stepRef (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
+  if is_value e then
+    let n = !add in
+    add := !add + 1;
+    Env.add n e g, Ptr(n)
+  else
+    let s = step g e in left s, ERef (right s)
+and stepAsn (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
   if is_value e1 && is_value e2 then
     match e1 with
-    | EFunc (x, t1, t2, e3)   -> sub e2 x e3
-    | EFix (f, x, t1, t2, e3) -> sub e1 f (sub e2 x e3)
-    | _ -> error (sprintf "Function expected, got %s" (string_of_exp e1))
-  else if is_value e1 then EApp (e1, step e2)
-  else EApp (step e1, e2)
-and stepPair (e1:exp) (e2:exp) : exp =
-  if is_value e1 && is_value e2 then EPair (e1, e2)
-  else if is_value e1 then EPair (e1, step e2)
-  else EPair (step e1, e2)
-and stepFst (e:exp) : exp =
+    | Ptr n -> Env.add n e2 g, EUnit
+    | _ -> error (sprintf "Ref expected, got %s" (string_of_exp g e1))
+  else if is_value e1 then
+    let s = step g e2 in left s, EAsn (e1, right s)
+  else
+    let s = step g e1 in left s, EAsn (right s, e2)
+and stepDeref  (g:exp Env.t) (e:exp) : (exp Env.t * exp) =
   if is_value e then
     match e with
-    | EPair (e1, _) -> step e1
-    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp e))
-  else EFst (step e)
-and stepSnd (e:exp) : exp =
-  if is_value e then
-    match e with
-    | EPair (_, e2) -> step e2
-    | _ -> error (sprintf "Pair expected, got %s" (string_of_exp e))
-  else EFst (step e)
-and stepHd (e:exp) : exp =
-  if is_value e then
-    match e with
-    | ECons (e1, _) -> step e1
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else EHd (step e)
-and stepTl (e:exp) : exp =
-  if is_value e then
-    match e with
-    | ECons (_, e2) -> step e2
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else ETl (step e)
-and stepEmpty (e:exp) : exp =
-  if is_value e then
-    match e with
-    | EList _       -> EBoolean true
-    | ECons (_, _)  -> EBoolean false
-    | _ -> error (sprintf "List expected, got %s" (string_of_exp e))
-  else EEmpty (step e)
+    | Ptr n -> g, Env.find n g
+    | _ -> error (sprintf "Ref expected, got %s" (string_of_exp g e))
+  else
+    let s = step g e in left s, EDeref (right s)
+and stepScol (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+  if is_value e1 then
+    g, e2
+  else
+    let s = step g e1 in left s, EScol (right s, e2)
+and stepWhile (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+  let s = eval g e1 in
+  let g = left s in
+  let v1 = right s in
+  match v1 with
+  | EBoolean b ->
+    if b then g, EScol(e2, EWhile(e1,e2))
+    else g, EUnit
+  | _ -> error (sprintf "Boolean expected, got %s" (string_of_exp g e1))
+and stepArr (g:exp Env.t) (t:typ) (e1:exp) : (exp Env.t * exp) =
+  let l =
+    match e1 with
+    | EInt n -> n
+    | _ -> error (sprintf "Integer expected, got %s" (string_of_exp g e1))
+    in
+    let start = !add in
+    let stop = start + l in
+    let rec arr g i =
+    if i = stop then g, Arr (start, l)
+    else
+    begin
+      add := !add + 1;
+      arr (Env.add i EUnit g) (i + 1)
+    end
+    in
+      arr g start
+and stepArac (g:exp Env.t) (e1:exp) (e2:exp) : (exp Env.t * exp) =
+  if is_value e1 && is_value e2 then
+    let i =
+      match e2 with
+      | EInt n1 -> n1
+      | _ -> error (sprintf "Integer expected, got %s" (string_of_exp g e2))
+      in
+      match e1 with
+      | Arr (n, l) ->
+      if i < 0 || i >= l then
+        error (sprintf "Array index out of bound. Should be < %s, got i = %s"
+               (string_of_int l) (string_of_int i))
+      else
+        g, Ptr (n + i)
+      | _ -> error (sprintf "Array expected, got %s" (string_of_exp g e1))
+  else if is_value e1 then
+    let s = step g e2 in left s, EArac (e1, right s)
+  else
+    let s = step g e1 in left s, EArac (right s, e2)
 
-let rec step_interpret (e:exp) =
+
+and stepInt (o:op) (n1:int) (n2:int) =
+  match o with
+  | EAdd            -> EInt (n1 + n2)
+  | ESubtract       -> EInt (n1 - n2)
+  | EMultiplication -> EInt (n1 * n2)
+  | EDivision       -> EInt (n1 / n2)
+  | EEqual          -> EBoolean (n1 = n2)
+  | ELeq            -> EBoolean (n1 <= n2)
+  | EGeq            -> EBoolean (n1 >= n2)
+  | ELess           -> EBoolean (n1 < n2)
+  | EGreat          -> EBoolean (n1 > n2)
+
+let rec step_eval (g:exp Env.t) (e:exp) =
   if is_value e then
-    sprintf "-> %s" (string_of_exp e) |> print_endline
+    sprintf "-> %s" (string_of_exp g e) |> print_endline
   else
   begin
-    sprintf "-> %s" (string_of_exp e) |> print_endline;
-    step e |> step_interpret
+    sprintf "-> %s" (string_of_exp g e) |> print_endline;
+    let s = step g e in step_eval (left s) (right s)
   end
+
+let interpret (e:exp) : (exp Env.t * exp) =
+    eval Env.empty e
+
+let step_interpret (e:exp) : unit =
+  step_eval Env.empty e
