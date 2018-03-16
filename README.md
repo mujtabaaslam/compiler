@@ -6,17 +6,27 @@ A simple compiler which a software system that translates programs from one form
 A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values, boolean operations, let-binds, functions, recursion and variables. The syntax for the compiler is as follows:
 
 ```
-e ::= n | b | x | e1 (+) e2 | if e1 then e2 else e3       
-    | let x = e1 in e2 | fun x -> e | fix f x -> e | e1 (e2)
+e ::= (e) | n | b | e1 (+) e2 | if e1 then e2 else e3
+    | x | let x : t = e1 in e2
+    | e1 (e2) | fun (x:t1) : t2 -> e | fix f (x:t1) : t2 -> e
+    | ()
+    | (e1, e2) | fst e | snd e
+    | [] : t | e1 :: e2 | hd e | tl e | empty e
+
+(+) ::= + | - | * | /
+       | == | <= | >= | < | >
+
+t ::= int | bool | t1 -> t2 | unit | t1 * t2 | [t]
+
 ```
 
 It also supports five command flags:
 
--lex -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
--parse -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
--step -- processes the input and prints out every step of evaluation  
--help --  Display this list of options  
---help -- Display this list of options  
+`-lex` -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
+`-parse` -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
+`-step` -- processes the input and prints out every step of evaluation  
+`-help` --  Display this list of options  
+`--help` -- Display this list of options  
 
 
 ## Setup Instructions
@@ -30,9 +40,9 @@ Run the compiler program using the command `./compiler.native [flag] [file]` whe
 
 # CLI  
 cli takes an amount of arguments and prints them out in order, one in each line. It also supports three command flags:  
--length -- prints out the lengths of the arguments instead of the arguments themselves.  
--help -- prints out a usage message for cli.  
---help -- prints out a usage message for cli.  
+`-length` -- prints out the lengths of the arguments instead of the arguments themselves.  
+`-help` -- prints out a usage message for cli.  
+`--help` -- prints out a usage message for cli.  
 
 ## Setup Instructions
 CLI uses the core library for OCaml. The ocamlc compiler is used to build this program.
@@ -91,6 +101,19 @@ None
 * Source code to support variables
 * Source code to support recursion  
 * Source code for small step semantics  
+
+**Changed**  
+* Tests for compiler  
+
+**Known Bugs**  
+None  
+
+*Assignment 5*  
+**Added**  
+* Source code for types and type-checking   
+* Source code to support unit  
+* Source code to support pairs  
+* Source code to support lists  
 
 **Changed**  
 * Tests for compiler  

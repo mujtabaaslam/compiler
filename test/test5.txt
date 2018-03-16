@@ -1,0 +1,8 @@
+let m : (int list) -> int =
+  fix f (n:int list) : int ->
+    if (empty n) then
+      1
+    else
+      hd n * f (tl n)
+in
+m (4 :: 2 :: [] : int)

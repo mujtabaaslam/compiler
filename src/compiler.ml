@@ -32,6 +32,19 @@ let string_of_token (t:token) : string =
   | FIX       -> "fix"
   | FUNC      -> "fun"
   | ARROW     -> "->"
+  | TINT      -> "int"
+  | TBOOL     -> "bool"
+  | COLON     -> ":"
+  | COMMA     -> ","
+  | FST       -> "fst"
+  | SND       -> "snd"
+  | LBRK      -> "["
+  | RBRK      -> "]"
+  | DCOLON    -> "::"
+  | HD        -> "hd"
+  | TL        -> "tl"
+  | EMPTY     -> "empty"
+  | TLIST     -> "list"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
@@ -53,9 +66,15 @@ let start_up(f:string) =
       if !parse then
         string_of_exp ast |> print_endline
       else if !step then
-        step_interpret ast
+        begin
+          typecheck Context.empty ast |> ignore;
+          step_interpret ast
+        end
       else
-        interpret ast |> string_of_exp |> print_endline
+        begin
+          typecheck Context.empty ast |> ignore;
+          interpret ast |> string_of_exp |> print_endline
+        end
 
 let main () =
   let speclist = [
