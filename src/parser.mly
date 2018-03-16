@@ -15,6 +15,7 @@
 %token COMMA FST SND
 %token LBRK RBRK DCOLON HD TL EMPTY TLIST
 %token REF COLONEQ EXC SCOLON
+%token WHILE DO END
 %token EOF
 
 %left IN ARROW
@@ -67,6 +68,7 @@ exp:
   | e1=exp COLONEQ e2=exp                                                 { EAsn (e1, e2) }
   | EXC e1=exp                                                            { EDeref e1 }
   | e1=exp SCOLON e2=exp                                                  { EScol (e1, e2) }
+  | WHILE e1=exp DO e2=exp END                                            { EWhile (e1, e2) }
 
   typ:
     | TINT                          { TInt }

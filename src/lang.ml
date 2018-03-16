@@ -38,6 +38,7 @@ type exp =
 | EDeref of exp
 | EScol of exp * exp
 | Ptr of int
+| EWhile of exp * exp
 
 let cur_address = ref 0
 
@@ -79,6 +80,7 @@ let rec string_of_exp g (e:exp) : string =
   | EDeref e1                -> sprintf "(!%s)" (string_of_exp g e1)
   | EScol (e1, e2)           -> sprintf "(%s; %s)" (string_of_exp g e1) (string_of_exp g e2)
   | Ptr n                    -> sprintf "Ptr(%d):{%s}" n (string_of_exp g (Environ.find n g))
+  | EWhile (e1, e2)          -> sprintf "(while %s do %s end)" (string_of_exp g e1) (string_of_exp g e2)
 and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
   | EAdd             -> sprintf "%s + %s" (string_of_exp g e1) (string_of_exp g e2)
@@ -247,6 +249,16 @@ let string_of_exp e = string_of_exp Environ.empty e  in
         | TUnit -> typecheck g e2
         | _ -> error (sprintf "Expected type unit for %s in %s, got %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
       end
+    |  EWhile (e1, e2) ->
+    let t1 = typecheck g e1 in
+    let t2 = typecheck g e2 in
+    if t1 <> TBoolean then
+      error (sprintf "Expected type bool for cond. guard of %s, got type %s"
+               (string_of_exp e) (string_of_typ t1))
+    else if t2 <> TUnit then
+      error (sprintf "Expected type unit for %s in %s, got type %s"
+               (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
+    else TUnit
     | _ -> error "Typecheck does not exist"
 
 let type_check (e:exp) : typ =
@@ -273,6 +285,7 @@ let rec subst (g:exp Environ.t) (v:exp) (x:string) (e:exp) : exp =
   | EAsn (e1, e2)                                   -> EAsn (sub e1, sub e2)
   | EDeref e1                                       -> EDeref (sub e1)
   | EScol (e1, e2)                                  -> EScol (sub e1, sub e2)
+  | EWhile (e1, e2)                                 -> EWhile (sub e1, sub e2)
   | _ as e                                          -> e
 
 let rec is_value (e:exp) : bool =
@@ -283,15 +296,15 @@ let rec is_value (e:exp) : bool =
   | EPair (e1, e2) -> is_value e1 && is_value e2
   | _                                         -> false
 
-let fst (s:exp Environ.t * exp) =
+let left (s:exp Environ.t * exp) =
   match s with (g, _) -> g
 
-let snd (s:exp Environ.t * exp) =
+let right (s:exp Environ.t * exp) =
   match s with (_, e) -> e
 
 let rec eval (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then (g, e)
-  else let s = step g e in eval (fst s) (snd s)
+  else let s = step g e in eval (left s) (right s)
 and step (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   match e with
   | EOp (o, e1, e2)         -> stepOp g o e1 e2
@@ -308,6 +321,7 @@ and step (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   | EAsn (e1, e2)           -> stepAsn g e1 e2
   | EDeref e1               -> stepDeref g e1
   | EScol (e1, e2)          -> stepScol g e1 e2
+  | EWhile (e1, e2)         -> stepWhile g e1 e2
   | e                       -> g, e
 and stepOp (g:exp Environ.t) (o:op) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
   if is_value e1 && is_value e2 then
@@ -318,23 +332,23 @@ and stepOp (g:exp Environ.t) (o:op) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
                     (string_of_exp g e1) (string_of_exp g e2))
   in g, v
 else if is_value e1 then
-  let s = step g e2 in fst s, EOp (o, e1, snd s)
+  let s = step g e2 in left s, EOp (o, e1, right s)
 else
-  let s = step g e1 in fst s, EOp (o, snd s, e2)
+  let s = step g e1 in left s, EOp (o, right s, e2)
 and stepIf (g:exp Environ.t) (e1:exp) (e2:exp) (e3:exp) : (exp Environ.t * exp) =
   if is_value e1 then
     match e1 with
     | EBoolean b -> if b then step g e2 else step g e3
     | _          -> if is_value e2 then
-                      let s = step g e3 in fst s, EIf (e1, e2, snd s)
+                      let s = step g e3 in left s, EIf (e1, e2, right s)
                     else
-                      let s = step g e2 in fst s, EIf (e1, snd s, e3)
+                      let s = step g e2 in left s, EIf (e1, right s, e3)
   else
-    let s = step g e1 in fst s, EIf (snd s, e2, e3)
+    let s = step g e1 in left s, EIf (right s, e2, e3)
 and stepLet (g:exp Environ.t) (x:string) (t:typ) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
 if is_value e1 then g, subst g e1 x e2
 else
-  let s = step g e1 in fst s, ELet (x, t, snd s, e2)
+  let s = step g e1 in left s, ELet (x, t, right s, e2)
 and stepApp (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
 if is_value e1 && is_value e2 then
   let e =
@@ -344,43 +358,43 @@ if is_value e1 && is_value e2 then
     | _ -> error (sprintf "Expected a function, got %s" (string_of_exp g e1))
   in g, e
 else if is_value e1 then
-  let s = step g e2 in fst s, EApp (e1, snd s)
+  let s = step g e2 in left s, EApp (e1, right s)
 else
-  let s = step g e1 in fst s, EApp (snd s, e2)
+  let s = step g e1 in left s, EApp (right s, e2)
 and stepPair (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
   if is_value e1 && is_value e2 then g, EPair (e1, e2)
   else if is_value e1 then
-    let s = step g e2 in fst s, EPair (e1, snd s)
+    let s = step g e2 in left s, EPair (e1, right s)
   else
-    let s = step g e1 in fst s, EPair (snd s, e2)
+    let s = step g e1 in left s, EPair (right s, e2)
 and stepFst (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     match e with
     | EPair (e1, _) -> g, e1
     | _ -> error (sprintf "Expected a pair, got %s" (string_of_exp g e))
   else
-    let s = step g e in fst s, EFst (snd s)
+    let s = step g e in left s, EFst (right s)
 and stepSnd (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     match e with
     | EPair (_, e2) -> g, e2
     | _ -> error (sprintf "Expected a pair, got %s" (string_of_exp g e))
   else
-    let s = step g e in fst s, ESnd (snd s)
+    let s = step g e in left s, ESnd (right s)
 and stepHd (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     match e with
     | ECons (e1, _) -> g, e1
     | _ -> error (sprintf "Expected a list, got %s" (string_of_exp g e))
   else
-    let s = step g e in fst s, EHd (snd s)
+    let s = step g e in left s, EHd (right s)
 and stepTl (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     match e with
     | ECons (_, e2) -> g, e2
     | _ -> error (sprintf "Expected a list, got %s" (string_of_exp g e))
   else
-    let s = step g e in fst s, ETl (snd s)
+    let s = step g e in left s, ETl (right s)
 and stepEmpty (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     let v =
@@ -390,36 +404,45 @@ and stepEmpty (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
       | _ -> error (sprintf "Expected a list, got %s" (string_of_exp g e))
     in g, v
   else
-    let s = step g e in fst s, EEmpty (snd s)
+    let s = step g e in left s, EEmpty (right s)
 and stepRef (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     let n = !cur_address in
     cur_address := !cur_address + 1;
     Environ.add n e g, Ptr(n)
   else
-    let s = step g e in fst s, ERef (snd s)
+    let s = step g e in left s, ERef (right s)
 and stepAsn (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
   if is_value e1 && is_value e2 then
     match e1 with
     | Ptr n -> Environ.add n e2 g, EUnit
     | _ -> error (sprintf "Expected a ref cell, got %s" (string_of_exp g e1))
   else if is_value e1 then
-    let s = step g e2 in fst s, EAsn (e1, snd s)
+    let s = step g e2 in left s, EAsn (e1, right s)
   else
-    let s = step g e1 in fst s, EAsn (snd s, e2)
+    let s = step g e1 in left s, EAsn (right s, e2)
 and stepDeref  (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   if is_value e then
     match e with
     | Ptr n -> g, Environ.find n g
     | _ -> error (sprintf "Expected a ref cell, got %s" (string_of_exp g e))
   else
-    let s = step g e in fst s, EDeref (snd s)
+    let s = step g e in left s, EDeref (right s)
 and stepScol (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
   if is_value e1 then
     g, e2
   else
-    let s = step g e1 in fst s, EScol (snd s, e2)
-and stepInt o n1 n2 =
+    let s = step g e1 in left s, EScol (right s, e2)
+and stepWhile (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
+  let s = eval g e1 in
+  let g = left s in
+  let v1 = right s in
+  match v1 with
+  | EBoolean b ->
+    if b then g, EScol(e2, EWhile(e1,e2))
+    else g, EUnit
+  | _ -> error (sprintf "Expected a boolean, got %s" (string_of_exp g e1))
+and stepInt (o:op) (n1:int) (n2:int) =
   match o with
   | EAdd            -> EInt (n1 + n2)
   | ESubtract       -> EInt (n1 - n2)
@@ -438,7 +461,7 @@ let rec step_eval (g:exp Environ.t) (e:exp) =
   else
   begin
     sprintf "-> %s" (string_of_exp g e) |> print_endline;
-    let s = step g e in step_eval (fst s) (snd s)
+    let s = step g e in step_eval (left s) (right s)
   end
 
 let interpret (e:exp) : (exp Environ.t * exp) =

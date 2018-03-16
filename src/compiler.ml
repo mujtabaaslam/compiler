@@ -49,6 +49,9 @@ let string_of_token (t:token) : string =
   | COLONEQ   -> ":="
   | EXC       -> "!"
   | SCOLON    -> ";"
+  | WHILE     -> "while"
+  | DO        -> "do"
+  | END       -> "end"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
