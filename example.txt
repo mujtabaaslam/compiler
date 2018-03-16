@@ -1,6 +1,12 @@
+/**
+ * this is a comment
+ * /* inside of another comment */
+ * but this is still a comment, not terminated by the preceding terminator
+ */
+ 
 let max2 : int -> (int -> int) =
   fun (x:int) : (int -> int) -> fun (y:int) : int -> if x > y then x else y
 in
 let a : int = 5 in
 let b : int = 2 in
-max2 (a) (b)  
+max2 (a) (b)

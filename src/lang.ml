@@ -14,6 +14,7 @@ type typ =
   | TList of typ
   | TRef of typ
   | TArr of typ
+  | TEnd
 
 type exp =
 | EUnit
@@ -43,6 +44,7 @@ type exp =
 | EArr of typ * exp
 | EArac of exp * exp
 | Arr of int * int
+| End
 
 let add = ref 0
 
@@ -59,6 +61,7 @@ let rec string_of_typ (t:typ) : string =
   | TList t        -> string_of_typ t ^ " list"
   | TRef t         -> sprintf "<%s>" (string_of_typ t)
   | TArr t         -> sprintf "array<%s>" (string_of_typ t)
+  | TEnd           -> ""
 
 let rec string_of_exp g (e:exp) : string =
   match e with
@@ -89,6 +92,7 @@ let rec string_of_exp g (e:exp) : string =
   | EArr (t, e1)             -> sprintf "new %s[%s]" (string_of_typ t) (string_of_exp g e1)
   | EArac (e1, e2)           -> sprintf "%s[%s]" (string_of_exp g e1) (string_of_exp g e2)
   | Arr (n, l)               -> string_of_arr g n l
+  | End                      -> ""
 and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
   | EAdd             -> sprintf "%s + %s" (string_of_exp g e1) (string_of_exp g e2)
@@ -119,6 +123,7 @@ and string_of_arr g (n:int) (l:int) =
 let rec typecheck (g:typ Context.t) (e:exp) : typ =
 let string_of_exp e = string_of_exp Env.empty e  in
   match e with
+  | End         -> TEnd
   | EUnit       -> TUnit
   | EInt _      -> TInt
   | EBoolean _  -> TBoolean
@@ -304,7 +309,7 @@ let rec sub (g:exp Env.t) (v:exp) (x:string) (e:exp) : exp =
 
 let rec is_value (e:exp) : bool =
   match e with
-  | EInt _ | EBoolean _ | EUnit
+  | EInt _ | EBoolean _ | EUnit | End
   | EFunc (_, _, _, _) | EFix (_, _, _, _, _)
   | EList _ | ECons (_, _) | Ptr _ | Arr (_, _) -> true
   | EPair (e1, e2) -> is_value e1 && is_value e2
