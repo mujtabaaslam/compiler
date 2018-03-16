@@ -92,7 +92,7 @@ let rec string_of_exp g (e:exp) : string =
   | EArr (t, e1)             -> sprintf "new %s[%s]" (string_of_typ t) (string_of_exp g e1)
   | EArac (e1, e2)           -> sprintf "%s[%s]" (string_of_exp g e1) (string_of_exp g e2)
   | Arr (n, l)               -> string_of_arr g n l
-  | End                      -> sprintf ""
+  | End                      -> ""
 
 and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
