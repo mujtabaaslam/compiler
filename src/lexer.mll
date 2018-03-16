@@ -25,28 +25,6 @@ let symbols : (string * Parser.token) list =
   ; ("fix", FIX)
   ; ("fun", FUNC)
   ; ("->", ARROW)
-  ; (":", COLON)
-  ; ("int", TINT)
-  ; ("bool", TBOOL)
-  ; (",", COMMA)
-  ; ("fst", FST)
-  ; ("snd", SND)
-  ; ("[", LBRK)
-  ; ("]", RBRK)
-  ; ("::", DCOLON)
-  ; ("hd", HD)
-  ; ("tl", TL)
-  ; ("empty", EMPTY)
-  ; ("list", TLIST)
-  ; ("ref", REF)
-  ; (":=", COLONEQ)
-  ; ("!", EXC)
-  ; (";", SCOLON)
-  ; ("while", WHILE)
-  ; ("do", DO)
-  ; ("end", END)
-  ; ("new", NEW)
-  ; ("array", ARRAY)
   ]
 
 let create_symbol lexbuf =
@@ -73,58 +51,25 @@ rule token = parse
   | digit+                    { INT (int_of_string (lexeme lexbuf)) }
   | boolean                   { BOOL (bool_of_string (lexeme lexbuf)) }
   | whitespace+ | newline+    { token lexbuf }
-  | "/*"                      { comment 0 lexbuf }
-  | '('     |
-    ')'     |
-    '+'     |
-    '-'     |
-    '*'     |
-    '/'     |
-    "<="    |
-    '<'     |
-    ">="    |
-    '>'     |
-    "=="    |
-    "if"    |
-    "then"  |
-    "else"  |
-    "let"   |
-    "="     |
-    "in"    |
-    "fix"   |
-    "fun"   |
-    "->"    |
-    "int"   |
-    "bool"  |
-    ':'     |
-    ','     |
-    "fst"   |
-    "snd"   |
-    '['     |
-    ']'     |
-    "::"    |
-    "hd"    |
-    "tl"    |
-    "empty" |
-    "list"  |
-    "ref"   |
-    ":="    |
-    '!'     |
-    ';'     |
-    "while" |
-    "do"    |
-    "end"   |
-    "new"   |
-    "array"                  { create_symbol lexbuf }
-  | var                      { VAR (lexeme lexbuf) }
+  | '('    |
+    ')'    |
+    '+'    |
+    '-'    |
+    '*'    |
+    '/'    |
+    "<="   |
+    '<'    |
+    ">="   |
+    '>'    |
+    "=="   |
+    "if"   |
+    "then" |
+    "else" |
+    "let"  |
+    "="    |
+    "in"   |
+    "fix"  |
+    "fun"  |
+    "->"  { create_symbol lexbuf }
+  | var                       { VAR (lexeme lexbuf) }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c ^ (position lexbuf)) }
-and comment n  = parse
-  | "*/" {
-    if n = 0 then token lexbuf
-    else comment (n-1) lexbuf
-  }
-  | "/*" {
-  comment (n+1) lexbuf
-  }
-  | _ { comment n lexbuf }
-  | eof { print_endline "Comments are not closed"; EOF }

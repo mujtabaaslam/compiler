@@ -32,28 +32,6 @@ let string_of_token (t:token) : string =
   | FIX       -> "fix"
   | FUNC      -> "fun"
   | ARROW     -> "->"
-  | TINT      -> "int"
-  | TBOOL     -> "bool"
-  | COLON     -> ":"
-  | COMMA     -> ","
-  | FST       -> "fst"
-  | SND       -> "snd"
-  | LBRK      -> "["
-  | RBRK      -> "]"
-  | DCOLON    -> "::"
-  | HD        -> "hd"
-  | TL        -> "tl"
-  | EMPTY     -> "empty"
-  | TLIST     -> "list"
-  | REF       -> "ref"
-  | COLONEQ   -> ":="
-  | EXC       -> "!"
-  | SCOLON    -> ";"
-  | WHILE     -> "while"
-  | DO        -> "do"
-  | END       -> "end"
-  | NEW       -> "new"
-  | ARRAY     -> "array"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =
@@ -71,21 +49,13 @@ let start_up(f:string) =
           | Parser.EOF -> Printf.printf "["; Printf.printf "%s" (string_of_token_list (List.rev tokens)); Printf.printf "]\n"
           | _ -> lexing (t :: tokens)
           in lexing []
-    else
-    let ast = Parser.prog Lexer.token lexbuf in
+    else let ast = Parser.prog Lexer.token lexbuf in
       if !parse then
-        string_of_exp Environ.empty ast |> print_endline
+        string_of_exp ast |> print_endline
       else if !step then
-        begin
-          type_check ast |> ignore;
-          step_interpret ast
-        end
+        step_interpret ast
       else
-        begin
-        type_check ast |> ignore;
-        let state = interpret ast in
-        string_of_exp (fst state) (snd state) |> print_endline
-        end
+        interpret ast |> string_of_exp |> print_endline
 
 let main () =
   let speclist = [

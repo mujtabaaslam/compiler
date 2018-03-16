@@ -1,3 +1,0 @@
-let x : <int> = ref 10 in
-let y:<int> = ref 5 in
-(y := !x / !y); !x * !y
