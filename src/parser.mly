@@ -16,6 +16,7 @@
 %token LBRK RBRK DCOLON HD TL EMPTY TLIST
 %token REF COLONEQ EXC SCOLON
 %token WHILE DO END
+%token NEW ARRAY
 %token EOF
 
 %left IN ARROW
@@ -25,8 +26,8 @@
 %right DCOLON
 %left PLUS MINUS
 %left MULTIPLY DIVIDE
-%nonassoc LPAREN
-%nonassoc FST SND HD TL EMPTY
+%nonassoc LPAREN LBRK
+%nonassoc FST SND HD TL EMPTY REF
 %nonassoc EXC
 
 %start <Lang.exp> prog
@@ -69,6 +70,8 @@ exp:
   | EXC e1=exp                                                            { EDeref e1 }
   | e1=exp SCOLON e2=exp                                                  { EScol (e1, e2) }
   | WHILE e1=exp DO e2=exp END                                            { EWhile (e1, e2) }
+  | NEW t=typ LBRK e1=exp RBRK                                            { EArr (t, e1) }
+  | e1=exp LBRK e2=exp RBRK                                               { EArac (e1, e2) }
 
   typ:
     | TINT                          { TInt }
@@ -78,3 +81,4 @@ exp:
     | t1=typ MULTIPLY t2=typ        { TPair (t1, t2) }
     | t=typ TLIST                   { TList t }
     | LESS t=typ GREAT              { TRef t }
+    | ARRAY LESS t=typ GREAT        { TArr t }

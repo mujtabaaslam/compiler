@@ -52,6 +52,8 @@ let string_of_token (t:token) : string =
   | WHILE     -> "while"
   | DO        -> "do"
   | END       -> "end"
+  | NEW       -> "new"
+  | ARRAY     -> "array"
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =

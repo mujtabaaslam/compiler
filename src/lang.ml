@@ -13,6 +13,7 @@ type typ =
   | TPair of typ * typ
   | TList of typ
   | TRef of typ
+  | TArr of typ
 
 type exp =
 | EUnit
@@ -39,6 +40,9 @@ type exp =
 | EScol of exp * exp
 | Ptr of int
 | EWhile of exp * exp
+| EArr of typ * exp
+| EArac of exp * exp
+| Arr of int * int
 
 let cur_address = ref 0
 
@@ -54,6 +58,7 @@ let rec string_of_typ (t:typ) : string =
   | TPair (t1, t2) -> sprintf "(%s * %s)" (string_of_typ t1) (string_of_typ t2)
   | TList t        -> string_of_typ t ^ " list"
   | TRef t         -> sprintf "<%s>" (string_of_typ t)
+  | TArr t         -> sprintf "array<%s>" (string_of_typ t)
 
 let rec string_of_exp g (e:exp) : string =
   match e with
@@ -68,19 +73,23 @@ let rec string_of_exp g (e:exp) : string =
   | EFix (f, x, t1, t2, e1)  -> sprintf "fix %s (%s:%s) : %s -> %s" f x (string_of_typ t1) (string_of_typ t2) (string_of_exp g e1)
   | EApp (e1, e2)            -> sprintf "%s (%s)" (string_of_exp g e1) (string_of_exp g e2)
   | EPair (e1, e2)           -> sprintf "(%s, %s)" (string_of_exp g e1) (string_of_exp g e2)
-  | EFst e1                  -> sprintf "(fst %s)" (string_of_exp g e1)
-  | ESnd e1                  -> sprintf "(snd %s)" (string_of_exp g e1)
+  | EFst e1                  -> sprintf "fst %s" (string_of_exp g e1)
+  | ESnd e1                  -> sprintf "snd %s" (string_of_exp g e1)
   | EList t                  -> sprintf "[] : %s" (string_of_typ t)
   | ECons (e1, e2)           -> string_of_cons g e1 e2
-  | EHd e1                   -> sprintf "(hd %s)" (string_of_exp g e1)
-  | ETl e1                   -> sprintf "(tl %s)" (string_of_exp g e1)
-  | EEmpty e1                -> sprintf "(empty %s)" (string_of_exp g e1)
-  | ERef e1                  -> sprintf "(ref %s)" (string_of_exp g e1)
-  | EAsn (e1, e2)            -> sprintf "(%s := %s)" (string_of_exp g e1) (string_of_exp g e2)
-  | EDeref e1                -> sprintf "(!%s)" (string_of_exp g e1)
-  | EScol (e1, e2)           -> sprintf "(%s; %s)" (string_of_exp g e1) (string_of_exp g e2)
+  | EHd e1                   -> sprintf "hd %s" (string_of_exp g e1)
+  | ETl e1                   -> sprintf "tl %s" (string_of_exp g e1)
+  | EEmpty e1                -> sprintf "empty %s" (string_of_exp g e1)
+  | ERef e1                  -> sprintf "ref %s" (string_of_exp g e1)
+  | EAsn (e1, e2)            -> sprintf "%s := %s" (string_of_exp g e1) (string_of_exp g e2)
+  | EDeref e1                -> sprintf "!%s" (string_of_exp g e1)
+  | EScol (e1, e2)           -> sprintf "%s; %s" (string_of_exp g e1) (string_of_exp g e2)
   | Ptr n                    -> sprintf "Ptr(%d):{%s}" n (string_of_exp g (Environ.find n g))
-  | EWhile (e1, e2)          -> sprintf "(while %s do %s end)" (string_of_exp g e1) (string_of_exp g e2)
+  | EWhile (e1, e2)          -> sprintf "while %s do %s end" (string_of_exp g e1) (string_of_exp g e2)
+  | EArr (t, e1)             -> sprintf "new %s[%s]" (string_of_typ t) (string_of_exp g e1)
+  | EArac (e1, e2)           -> sprintf "%s[%s]" (string_of_exp g e1) (string_of_exp g e2)
+  | Arr (n, l)               -> string_of_arr g n l
+
 and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
   | EAdd             -> sprintf "%s + %s" (string_of_exp g e1) (string_of_exp g e2)
@@ -99,7 +108,14 @@ and string_of_cons g (e1:exp) (e2:exp) : string =
     | ECons (e1, e2) -> string_of_cons g e1 e2
     | _ -> error (sprintf "Expected a cons, got %s" (string_of_exp g e2))
   in
-  sprintf "(%s :: %s)" (string_of_exp g e1) str
+  sprintf "%s :: %s" (string_of_exp g e1) str
+and string_of_arr g (n:int) (l:int) =
+  let stop = n + l in
+  let rec list_of_ptr_string cur acc =
+    if cur = stop then acc
+    else list_of_ptr_string (cur + 1) (sprintf "Ptr(%d):{%s}" cur (string_of_exp g (Environ.find cur g)) :: acc)
+  in
+  sprintf "[%s]" (String.concat ", " (List.rev (list_of_ptr_string n [])))
 
 let rec typecheck (g:typ Context.t) (e:exp) : typ =
 let string_of_exp e = string_of_exp Environ.empty e  in
@@ -259,6 +275,19 @@ let string_of_exp e = string_of_exp Environ.empty e  in
       error (sprintf "Expected type unit for %s in %s, got type %s"
                (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
     else TUnit
+    | EArr (t, e1) ->
+    let t1 = typecheck g e1 in
+    if t1 = TInt then TArr t
+    else error (sprintf "Expected type int for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+    | EArac (e1, e2) ->
+    let t2 = typecheck g e2 in
+    if t2 = TInt then
+      let t1 = typecheck g e1 in
+      match t1 with
+      | TArr t -> TRef t
+      | _ -> error (sprintf "Expected type array for %s in %s, got type %s" (string_of_exp e1) (string_of_exp e) (string_of_typ t1))
+    else
+      error (sprintf "Expected type int for %s in %s, got type %s" (string_of_exp e2) (string_of_exp e) (string_of_typ t2))
     | _ -> error "Typecheck does not exist"
 
 let type_check (e:exp) : typ =
@@ -286,15 +315,17 @@ let rec subst (g:exp Environ.t) (v:exp) (x:string) (e:exp) : exp =
   | EDeref e1                                       -> EDeref (sub e1)
   | EScol (e1, e2)                                  -> EScol (sub e1, sub e2)
   | EWhile (e1, e2)                                 -> EWhile (sub e1, sub e2)
+  | EArr (t, e1)                                    -> EArr (t, sub e1)
+  | EArac (e1, e2)                                  -> EArac (sub e1, sub e2)
   | _ as e                                          -> e
 
 let rec is_value (e:exp) : bool =
   match e with
   | EInt _ | EBoolean _ | EUnit
   | EFunc (_, _, _, _) | EFix (_, _, _, _, _)
-  | EList _ | ECons (_, _) | Ptr _            -> true
+  | EList _ | ECons (_, _) | Ptr _ | Arr (_, _) -> true
   | EPair (e1, e2) -> is_value e1 && is_value e2
-  | _                                         -> false
+  | _                                           -> false
 
 let left (s:exp Environ.t * exp) =
   match s with (g, _) -> g
@@ -322,6 +353,8 @@ and step (g:exp Environ.t) (e:exp) : (exp Environ.t * exp) =
   | EDeref e1               -> stepDeref g e1
   | EScol (e1, e2)          -> stepScol g e1 e2
   | EWhile (e1, e2)         -> stepWhile g e1 e2
+  | EArr (t, e1)            -> stepArr g t e1
+  | EArac (e1, e2)          -> stepArac g e1 e2
   | e                       -> g, e
 and stepOp (g:exp Environ.t) (o:op) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
   if is_value e1 && is_value e2 then
@@ -442,6 +475,44 @@ and stepWhile (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
     if b then g, EScol(e2, EWhile(e1,e2))
     else g, EUnit
   | _ -> error (sprintf "Expected a boolean, got %s" (string_of_exp g e1))
+and stepArr (g:exp Environ.t) (t:typ) (e1:exp) : (exp Environ.t * exp) =
+  let l =
+    match e1 with
+    | EInt n -> n
+    | _ -> error (sprintf "Expected an integer, got %s" (string_of_exp g e1))
+    in
+    let start = !cur_address in
+    let stop = start + l in
+    let rec arr g i =
+    if i = stop then g, Arr (start, l)
+    else
+    begin
+      cur_address := !cur_address + 1;
+      arr (Environ.add i EUnit g) (i + 1)
+    end
+    in
+      arr g start
+and stepArac (g:exp Environ.t) (e1:exp) (e2:exp) : (exp Environ.t * exp) =
+  if is_value e1 && is_value e2 then
+    let i =
+      match e2 with
+      | EInt n1 -> n1
+      | _ -> error (sprintf "Expected an int, got %s" (string_of_exp g e2))
+      in
+      match e1 with
+      | Arr (n, l) ->
+      if i < 0 || i >= l then
+        error (sprintf "Array index out of bound. Expected 0 <= i < %s, got i = %s"
+               (string_of_int l) (string_of_int i))
+      else
+        g, Ptr (n + i)
+      | _ -> error (sprintf "Expected an array, got %s" (string_of_exp g e1))
+  else if is_value e1 then
+    let s = step g e2 in left s, EArac (e1, right s)
+  else
+    let s = step g e1 in left s, EArac (right s, e2)
+
+
 and stepInt (o:op) (n1:int) (n2:int) =
   match o with
   | EAdd            -> EInt (n1 + n2)
