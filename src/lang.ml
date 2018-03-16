@@ -200,7 +200,7 @@ let rec typecheck (g:typ Context.t) (e:exp) : typ =
     end
 
 let rec sub (v:exp) (x:string) (e:exp) : exp =
-  let s expr = sub v x expr in
+  let s exp = sub v x exp in
   match e with
   | EOp (o, e1, e2)                                 -> EOp (o, s e1, s e2)
   | EIf (e1, e2, e3)                                -> EIf (s e1, s e2, s e3)
