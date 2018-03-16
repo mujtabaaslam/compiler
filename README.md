@@ -3,7 +3,7 @@
 A simple compiler which a software system that translates programs from one form to another.
 
 # Compiler
-A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values, boolean operations, let-binds, functions, recursion and variables. The syntax for the compiler is as follows:
+A compiler for a small arithmetic language built on infix style. It handles numbers, arithmetic operations, boolean values, boolean operations, let-binds, functions, recursion, variables, reference cells, while loops and arrays. The syntax for the compiler is as follows:
 
 ```
 e ::= (e) | n | b | e1 (+) e2 | if e1 then e2 else e3
@@ -12,11 +12,15 @@ e ::= (e) | n | b | e1 (+) e2 | if e1 then e2 else e3
     | ()
     | (e1, e2) | fst e | snd e
     | [] : t | e1 :: e2 | hd e | tl e | empty e
+    | ref e | e1 := e2 | !e | (e1) ; e2
+    | while e1 do e2 end
+    | new t[n] | e1[e2] | e1 := e2
 
 (+) ::= + | - | * | /
        | == | <= | >= | < | >
 
-t ::= int | bool | t1 -> t2 | unit | t1 * t2 | [t]
+t ::= int | bool | t1 -> t2
+     | unit | t1 * t2 | [t] | <t> | array<t>
 
 ```
 
@@ -114,6 +118,18 @@ None
 * Source code to support unit  
 * Source code to support pairs  
 * Source code to support lists  
+
+**Changed**  
+* Tests for compiler  
+
+**Known Bugs**  
+None  
+
+*Assignment 6*  
+**Added**  
+* Source code to support reference cells  
+* Source code to support while loops
+* Source code to support arrays 
 
 **Changed**  
 * Tests for compiler  
