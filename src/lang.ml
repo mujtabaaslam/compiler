@@ -13,8 +13,8 @@ type exp =
 | EFix   of string * string * exp
 | EApp  of exp * exp
 
-let error err_msg =
-  fprintf stderr "Error: %s\n" err_msg; exit 1
+let error (msg:string) =
+  fprintf stderr "Error: %s\n" msg; exit 1
 
 let rec string_of_exp (e:exp) : string =
   match e with
@@ -40,7 +40,7 @@ match o with
 | EEqual           -> sprintf "%s == %s" (string_of_exp e1) (string_of_exp e2)
 
 let rec sub (v:exp) (x:string) (e:exp) : exp =
-  let s expr = sub v x expr in
+  let s exp = sub v x exp in
   match e with
   | EOp (o, e1, e2)                         -> EOp (o, s e1, s e2)
   | EIf (e1, e2, e3)                        -> EIf (s e1, s e2, s e3)
