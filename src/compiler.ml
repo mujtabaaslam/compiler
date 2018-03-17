@@ -130,7 +130,7 @@ let main () =
   ("-lex", Arg.Set lex, "processes the input source file through the lexing phase and prints the resulting stream of tokens to the console");
   ("-parse", Arg.Set parse, "processes the input source file through the parsing phase and prints the resulting abstract syntax tree");
   ("-step", Arg.Set step, "processes the input and prints out every step of evaluation");
-  ("-repl", Arg.Set repl, "enters repl mode which allows you to interactively enter expressions and see their final evaluated values")
+  ("-repl", Arg.Set repl, "enters repl mode which allows the user to interactively enter expressions and see their final evaluated values")
   ] in
   let usage_msg = "Usage: my-project [flags] [args]\n Available flags:" in
   Arg.parse speclist start_up usage_msg;

@@ -29,6 +29,7 @@ It also supports five command flags:
 `-lex` -- processes the input source file through the lexing phase and prints the resulting stream of tokens to the console  
 `-parse` -- processes the input source file through the parsing phase and prints the resulting abstract syntax tree  
 `-step` -- processes the input and prints out every step of evaluation  
+`-repl` -- enters repl mode which allows the user to interactively enter expressions and see their final evaluated values
 `-help` --  Display this list of options  
 `--help` -- Display this list of options  
 
@@ -129,10 +130,21 @@ None
 **Added**  
 * Source code to support reference cells  
 * Source code to support while loops
-* Source code to support arrays 
+* Source code to support arrays
 
 **Changed**  
 * Tests for compiler  
+
+**Known Bugs**  
+None  
+
+*Final Project*  
+**Added**  
+* Source code to support comments
+* Source code to support repl mode
+
+**Changed**  
+Nothing
 
 **Known Bugs**  
 None  
