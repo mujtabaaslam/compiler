@@ -5,6 +5,7 @@
 %token <int> INT
 %token <bool> BOOL
 %token <string> VAR
+%token LBRACE RBRACE DOT
 %token PLUS MINUS MULTIPLY DIVIDE
 %token LEQ LESS GEQ GREAT EQUAL
 %token LPAREN RPAREN
@@ -73,13 +74,22 @@ exp:
   | WHILE e1=exp DO e2=exp END                                            { EWhile (e1, e2) }
   | NEW t=typ LBRK e1=exp RBRK                                            { EArr (t, e1) }
   | e1=exp LBRK e2=exp RBRK                                               { EArac (e1, e2) }
+  | LBRACE f1=fields RBRACE                                               { EObject f1 }
 
-  typ:
-    | TINT                          { TInt }
-    | TBOOL                         { TBoolean }
-    | LPAREN t=typ RPAREN           { t }
-    | t1=typ ARROW t2=typ           { TFunc (t1, t2) }
-    | t1=typ MULTIPLY t2=typ        { TPair (t1, t2) }
-    | t=typ TLIST                   { TList t }
-    | LESS t=typ GREAT              { TRef t }
-    | ARRAY LESS t=typ GREAT        { TArr t }
+typ:
+  | TINT                          { TInt }
+  | TBOOL                         { TBoolean }
+  | LPAREN t=typ RPAREN           { t }
+  | t1=typ ARROW t2=typ           { TFunc (t1, t2) }
+  | t1=typ MULTIPLY t2=typ        { TPair (t1, t2) }
+  | t=typ TLIST                   { TList t }
+  | LESS t=typ GREAT              { TRef t }
+  | ARRAY LESS t=typ GREAT        { TArr t }
+
+field:
+  | x=VAR EQ e1=exp               { (x, e1) }
+
+fields:
+  |                                 { [] }
+  | f=field                         { [f] }
+  | f=field COMMA f1=fields         { f :: f1 }

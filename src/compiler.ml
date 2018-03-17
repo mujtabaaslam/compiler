@@ -54,6 +54,9 @@ let string_of_token (t:token) : string =
   | END       -> "end"
   | NEW       -> "new"
   | ARRAY     -> "array"
+  | LBRACE    -> "{"
+  | RBRACE    -> "}"
+  | DOT       -> "."
   | _         -> failwith ("unexpected token")
 
 let string_of_token_list (toks:token list) : string =

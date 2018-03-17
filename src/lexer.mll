@@ -47,6 +47,9 @@ let symbols : (string * Parser.token) list =
   ; ("end", END)
   ; ("new", NEW)
   ; ("array", ARRAY)
+  ; ("{", LBRACE)
+  ; ("}", RBRACE)
+  ; (".", DOT)
   ]
 
 let create_symbol lexbuf =
@@ -115,7 +118,10 @@ rule token = parse
     "do"    |
     "end"   |
     "new"   |
-    "array"                  { create_symbol lexbuf }
+    "array" |
+    "{"     |
+    "}"     |
+    '.'                      { create_symbol lexbuf }
   | var                      { VAR (lexeme lexbuf) }
   | _ as c { raise @@ Lexer_error ("Unexpected character: " ^ Char.escaped c ^ (position lexbuf)) }
 and comment n  = parse
