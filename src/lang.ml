@@ -2,6 +2,7 @@ open Printf
 module Context = Map.Make(String)
 module Env = Map.Make(struct type t = int let compare = compare end)
 
+
 type op = EAdd | ESubtract | EMultiplication | EDivision | ELeq | ELess | EGeq | EGreat | EEqual
 
 type typ =
@@ -44,7 +45,6 @@ type exp =
 | EArac of exp * exp
 | Arr of int * int
 | End
-| EObject of (string * exp) list
 
 let add = ref 0
 
@@ -93,7 +93,6 @@ let rec string_of_exp g (e:exp) : string =
   | EArac (e1, e2)           -> sprintf "%s[%s]" (string_of_exp g e1) (string_of_exp g e2)
   | Arr (n, l)               -> string_of_arr g n l
   | End                      -> ""
-  | EObject f1               -> sprintf "{%s}" (string_of_object g f1)
 and string_of_op g (o:op) (e1:exp) (e2:exp) : string =
   match o with
   | EAdd             -> sprintf "%s + %s" (string_of_exp g e1) (string_of_exp g e2)
@@ -120,13 +119,6 @@ and string_of_arr g (n:int) (l:int) =
     else list_ptr (cur + 1) (sprintf "Ptr(%d):{%s}" cur (string_of_exp g (Env.find cur g)) :: acc)
   in
   sprintf "[%s]" (String.concat ", " (List.rev (list_ptr n [])))
-and string_of_object g (o:(string * exp) list) : string =
-    let rec list_object cur acc =
-      match cur with
-      | []      -> acc
-      | (x, e1) :: xs -> list_object xs (sprintf "%s = %s" x (string_of_exp g e1) :: acc)
-    in
-    sprintf "%s" (String.concat ", " (List.rev (list_object o [])))
 
 let rec typecheck (g:typ Context.t) (e:exp) : typ =
 let string_of_exp e = string_of_exp Env.empty e  in
