@@ -1,0 +1,14 @@
+/**
+ * this is a comment
+ * /* inside of another comment */
+ * but this is still a comment, not terminated by the preceding terminator
+ */
+
+let n : int = 4 in
+let x : array<bool> = new bool[n] in
+let count : <int> = ref 0 in
+while !count < n do
+  (x[!count] := true);
+  count := !count + 1
+end;
+x

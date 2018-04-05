@@ -1,0 +1,18 @@
+/**
+ * this is a comment
+ * /* inside of another comment */
+ * but this is still a comment, not terminated by the preceding terminator
+ */
+
+let min : <int->(int list->int)> = ref
+  fix f (cur:int) : (int list->int) ->
+    fun (l:int list) : int ->
+    if (empty l) then
+      cur
+    else
+      if (hd l) < cur then
+        f (hd l) (tl l)
+      else
+        f (cur) (tl l)
+in
+!min (100) (10 :: 20 :: 5 :: 70 :: 3 :: 80 :: 1000 :: [] : int)

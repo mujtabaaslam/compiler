@@ -1,0 +1,8 @@
+/**
+ * this is a comment
+ * /* inside of another comment */
+ * but this is still a comment, not terminated by the preceding terminator
+ */
+
+let count : <bool> = ref true in
+!count

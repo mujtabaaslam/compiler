@@ -102,3 +102,43 @@ echo "===== test51 ====="
 ./compiler.native -parse test/test12.txt
 echo "===== test52 ====="
 ./compiler.native -step test/test12.txt
+echo "===== test53 ====="
+./compiler.native test/test13.txt
+echo "===== test54 ====="
+./compiler.native -lex test/test13.txt
+echo "===== test55 ====="
+./compiler.native -parse test/test13.txt
+echo "===== test56 ====="
+./compiler.native -step test/test13.txt
+echo "===== test57 ====="
+./compiler.native test/test14.txt
+echo "===== test58 ====="
+./compiler.native -lex test/test14.txt
+echo "===== test59 ====="
+./compiler.native -parse test/test14.txt
+echo "===== test60 ====="
+./compiler.native -step test/test14.txt
+echo "===== test61 ====="
+./compiler.native test/test15.txt
+echo "===== test62 ====="
+./compiler.native -lex test/test15.txt
+echo "===== test63 ====="
+./compiler.native -parse test/test15.txt
+echo "===== test64 ====="
+./compiler.native -step test/test15.txt
+echo "===== test65 ====="
+./compiler.native test/test16.txt
+echo "===== test66 ====="
+./compiler.native -lex test/test16.txt
+echo "===== test67 ====="
+./compiler.native -parse test/test16.txt
+echo "===== test68 ====="
+./compiler.native -step test/test16.txt
+echo "===== test69 ====="
+./compiler.native test/test17.txt
+echo "===== test70 ====="
+./compiler.native -lex test/test17.txt
+echo "===== test71 ====="
+./compiler.native -parse test/test17.txt
+echo "===== test72 ====="
+./compiler.native -step test/test17.txt
